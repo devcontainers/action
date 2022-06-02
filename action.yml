@@ -1,0 +1,32 @@
+name: 'Dev Container Utilities'
+description: 'Package your custom development container feature(s) and/or definition(s)'
+author: 'GitHub'
+branding:
+  icon: box
+  color: blue
+inputs:
+  # Global options
+  publish-features:
+    required: false
+    default: "true"
+    description: '["true"/"false"] Generates a tgz of all dev container features at `path-to-features`'
+  publish-definitions:
+    required: false
+    default: "false"
+    description: '["true"/"false"] Generates individual tgz(s) for each dev container definition at `base-path-to-definitions`'
+
+  # 'features' options
+  path-to-features:
+    required: false
+    default: '.' # Change to `./features` ?
+    description: 'Relative base path to the devcontainer-features.json manifest and relevant scripts'
+
+  # 'definitions' options
+  path-to-definitions:
+    required: false
+    default: './definitions'
+    description: 'Relative base path to definition templates. Each subfolder of this directory will be packaged as its own definition.'
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
