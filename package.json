@@ -1,8 +1,8 @@
 {
-  "name": "devcontainer-features-publish-action",
-  "version": "0.1.1",
+  "name": "dev-container",
+  "version": "1.0.0",
   "private": true,
-  "description": "Action to help build/lint/publish feature definitions to be used in your devcontainer",
+  "description": "Action to help build/lint/publish self-authored dev container assets",
   "main": "lib/main.js",
   "scripts": {
     "build": "tsc",
@@ -14,15 +14,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/joshspicer/devcontainer-features-publish-action.git"
+    "url": "git+https://github.com/devcontainers/action"
   },
   "keywords": [
     "actions",
     "node",
     "setup",
-    "devcontainer"
+    "devcontainer",
+    "devcontainers",
+    "dev container"
   ],
-  "author": "Microsoft",
+  "author": "GitHub",
   "license": "MIT",
   "dependencies": {
     "@actions/core": "^1.6.0",

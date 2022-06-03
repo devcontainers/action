@@ -4,57 +4,54 @@
  *-------------------------------------------------------------------------------------------------------------*/
 
 import * as core from '@actions/core'
-import * as github from '@actions/github'
 import {
-  addMetadataToFeaturesJson,
-  tarDirectory,
-  getDefinitionsAndPackage
+  addCollectionsMetadataFile,
+  getFeaturesAndPackage,
+  getTemplatesAndPackage
 } from './utils'
 
 async function run(): Promise<void> {
   core.debug('Reading input parameters...')
 
-  const shouldPublishFeatures = core.getInput('publish-features') === 'true'
-  const shouldPublishTemplate = core.getInput('publish-definitions') === 'true'
+  const shouldPublishFeatures =
+    core.getInput('publish-features').toLowerCase() === 'true'
+  const shouldPublishTemplate =
+    core.getInput('publish-templates').toLowerCase() === 'true'
 
   if (shouldPublishFeatures) {
     core.info('Publishing features...')
-    const featuresPath = core.getInput('path-to-features')
-    packageFeatures(featuresPath)
+    const featuresBasePath = core.getInput('base-path-to-features')
+    await packageFeatures(featuresBasePath)
   }
 
   if (shouldPublishTemplate) {
     core.info('Publishing template...')
-    const basePathToDefinitions = core.getInput('path-to-definitions')
-    packageDefinitions(basePathToDefinitions)
+    const basePathToDefinitions = core.getInput('base-path-to-templates')
+    await packageTemplates(basePathToDefinitions)
   }
 
-  // TODO: Programatically generate `devcontainer-index.json ?
+  // TODO: Programatically add feature/template fino with relevant metadata for UX clients.
+  core.info('Generation metadata file: devcontainer-collection.json')
+  await addCollectionsMetadataFile()
 }
 
-async function packageFeatures(featuresPath: string): Promise<void> {
+async function packageFeatures(basePath: string): Promise<void> {
   try {
-    core.info('Inserting metadata onto devcontainer-features.json')
-    await addMetadataToFeaturesJson(featuresPath)
+    core.info(`Archiving all features in ${basePath}`)
+    await getFeaturesAndPackage(basePath)
 
-    core.info('Starting to tar')
-    await tarDirectory(featuresPath, 'devcontainer-features.tgz')
-
-    core.info('Package features has finished.')
+    core.info('Packaging features has finished.')
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }
 }
 
-async function packageDefinitions(basePath: string): Promise<void> {
+async function packageTemplates(basePath: string): Promise<void> {
   try {
-    // core.info('Asking vscdc to package template...')
-    // const package = require('./vscdc/src/package').package;
+    core.info(`Archiving all templated in ${basePath}`)
+    await getTemplatesAndPackage(basePath)
 
-    core.info(`Archiving all definitions in ${basePath}`)
-    const definitionArchives = await getDefinitionsAndPackage(basePath)
-
-    core.info('Package definition has finished.')
+    core.info('Packaging templates has finished.')
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
   }

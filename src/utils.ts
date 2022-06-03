@@ -1,13 +1,13 @@
 import * as github from '@actions/github'
 import * as tar from 'tar'
 import * as fs from 'fs'
-import * as jsonc from 'jsonc-parser'
 import * as core from '@actions/core'
-import {Octokit} from '@octokit/core'
-import {Api} from '@octokit/plugin-rest-endpoint-methods/dist-types/types'
 import {promisify} from 'util'
 import path from 'path'
-import {FeaturesConfig, SourceInformation} from './contracts/feature'
+import {
+  DevContainerCollectionMetadata,
+  SourceInformation
+} from './contracts/collection'
 
 export const readLocalFile = promisify(fs.readFile)
 export const writeLocalFile = promisify(fs.writeFile)
@@ -29,13 +29,8 @@ export async function tarDirectory(path: string, tgzName: string) {
   })
 }
 
-export async function addMetadataToFeaturesJson(pathToFeatureDir: string) {
-  const p = path.join(pathToFeatureDir, 'devcontainer-features.json')
-  const featuresJson = (await (readLocalFile(p) ?? '')).toString()
-  if (featuresJson === '') {
-    core.setFailed('Could not parse devcontainer-features.json')
-    return
-  }
+export async function addCollectionsMetadataFile() {
+  const p = path.join('.', 'devcontainer-collection.json')
 
   // Insert github repo metadata
   const ref = github.context.ref
@@ -53,53 +48,49 @@ export async function addMetadataToFeaturesJson(pathToFeatureDir: string) {
     sourceInformation = {...sourceInformation, tag}
   }
 
-  // Read in features.json and append SourceInformation
-  let parsed: FeaturesConfig = jsonc.parse(featuresJson)
-  parsed = {...parsed, sourceInformation}
+  const metadata: DevContainerCollectionMetadata = {
+    sourceInformation,
+    features: [],
+    templates: []
+  }
 
-  // Write back to the file
-  await writeLocalFile(p, JSON.stringify(parsed, undefined, 4))
+  // Write to the file
+  await writeLocalFile(p, JSON.stringify(metadata, undefined, 4))
 }
 
-// export async function setupTemplateOutputFolders(templateName: string) {
-//   await mkdirLocal(`./temp-dir/manifest/${templateName}`, {
-//     recursive: true
-//   })
-//   await mkdirLocal(`./temp-dir/containers/${templateName}`, {
-//     recursive: true
-//   })
-//   await mkdirLocal(`./temp-dir/containers-readmes/${templateName}`, {
-//     recursive: true
-//   })
-//   return './temp-dir'
-// }
-
-// export async function copyTemplateFiles(templateName: string) {
-//   renameLocal(
-//     `./definition-manifest.json`,
-//     `./temp-dir/manifest/${templateName}/definition-manifest.json`
-//   )
-//   renameLocal(
-//     `./.devcontainer/`,
-//     `./temp-dir/containers/${templateName}/.devcontainer`
-//   )
-//   renameLocal(
-//     `./README.md`,
-//     `./temp-dir/containers-readmes/${templateName}/README.md`
-//   )
-// }
-
-export async function getDefinitionsAndPackage(basePath: string) {
+export async function getFeaturesAndPackage(basePath: string) {
   let archives: string[] = []
   fs.readdir(basePath, (err, files) => {
     if (err) {
       core.error(err.message)
-      core.setFailed(`failed to get list of definitions: ${err.message}`)
+      core.setFailed(`failed to get list of features: ${err.message}`)
       return
     }
 
     files.forEach(file => {
-      core.info(`definition ==> ${file}`)
+      core.info(`feature ==> ${file}`)
+      if (file !== '.' && file !== '..') {
+        const archiveName = `${file}.tgz`
+        tarDirectory(`${basePath}/${file}`, archiveName)
+        archives.push(archiveName)
+      }
+    })
+  })
+
+  return archives
+}
+
+export async function getTemplatesAndPackage(basePath: string) {
+  let archives: string[] = []
+  fs.readdir(basePath, (err, files) => {
+    if (err) {
+      core.error(err.message)
+      core.setFailed(`failed to get list of templates: ${err.message}`)
+      return
+    }
+
+    files.forEach(file => {
+      core.info(`template ==> ${file}`)
       if (file !== '.' && file !== '..') {
         const archiveName = `devcontainer-definition-${file}.tgz`
         tarDirectory(`${basePath}/${file}`, archiveName)
