@@ -13,10 +13,13 @@ import {
 async function run(): Promise<void> {
   core.debug('Reading input parameters...')
 
+  // Read inputs
   const shouldPublishFeatures =
     core.getInput('publish-features').toLowerCase() === 'true'
   const shouldPublishTemplate =
     core.getInput('publish-templates').toLowerCase() === 'true'
+  const shouldGenerateDocumentation =
+    core.getInput('generate-docs').toLowerCase() === 'true'
 
   if (shouldPublishFeatures) {
     core.info('Publishing features...')
@@ -28,6 +31,18 @@ async function run(): Promise<void> {
     core.info('Publishing template...')
     const basePathToDefinitions = core.getInput('base-path-to-templates')
     await packageTemplates(basePathToDefinitions)
+  }
+
+  if (shouldGenerateDocumentation) {
+    core.info('Generating documentation...');
+    const featuresBasePath = core.getInput('base-path-to-features')
+    if (featuresBasePath) {
+      await generateFeaturesDocumentation(featuresBasePath)
+    } else {
+      core.error("'base-path-to-features' input is required to generate documentation");
+    }
+    // TODO: base-path-to-templates
+    
   }
 
   // TODO: Programatically add feature/template fino with relevant metadata for UX clients.
