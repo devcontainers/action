@@ -23,9 +23,9 @@ export async function generateFeaturesDocumentation(basePath: string) {
         const featureJsonPath = path.join(
           basePath,
           f,
-          'src',
           'devcontainer-feature.json'
         )
+
         if (!fs.existsSync(featureJsonPath)) {
           core.error(
             `devcontainer-feature.json not found at path '${featureJsonPath}'`
