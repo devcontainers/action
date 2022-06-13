@@ -76,6 +76,7 @@ export async function generateFeaturesDocumentation(basePath: string) {
 
           return (
             '| Options Id | Description | Type | Default Value |' +
+            '|-----|-----|-----|-----|' +
             '\n' +
             contents
           )
@@ -116,8 +117,8 @@ const README_TEMPLATE = `
 ## Example Usage
 
 \`\`\`json
-"features: [
-    "#{featureName}": {
+"features": [
+    "#{featureId}": {
         "id": "#{nwo}/#{featureId}@#{versionTag}",
         "options": {
             "version": "latest"
