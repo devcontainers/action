@@ -32,13 +32,18 @@ export async function generateFeaturesDocumentation(basePath: string) {
           )
           return
         }
-        const featureJson: Feature = JSON.parse(
-          fs.readFileSync(featureJsonPath, 'utf8')
-        )
 
-        if (!featureJson.id) {
+        let featureJson: Feature | undefined = undefined
+        try {
+          featureJson = JSON.parse(fs.readFileSync(featureJsonPath, 'utf8'))
+        } catch (err) {
+          core.error(`Failed to parse ${featureJsonPath}: ${err}`)
+          return
+        }
+
+        if (!featureJson || !featureJson?.id) {
           core.error(
-            `devconatiner-feature.json for feature '${f}' does not contain an 'id'`
+            `devcontainer-feature.json for feature '${f}' does not contain an 'id'`
           )
           return
         }
@@ -54,7 +59,7 @@ export async function generateFeaturesDocumentation(basePath: string) {
         }
 
         const generateOptionsMarkdown = () => {
-          const options = featureJson.options
+          const options = featureJson?.options
           if (!options) {
             return ''
           }
