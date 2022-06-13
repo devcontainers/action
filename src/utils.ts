@@ -2,7 +2,7 @@ import * as github from '@actions/github'
 import * as tar from 'tar'
 import * as fs from 'fs'
 import * as core from '@actions/core'
-import { promisify } from 'util'
+import {promisify} from 'util'
 import path from 'path'
 import {
   DevContainerCollectionMetadata,
@@ -24,7 +24,7 @@ const filter = (file: string, _: tar.FileStat) => {
 }
 
 export async function tarDirectory(path: string, tgzName: string) {
-  return tar.create({ file: tgzName, C: path, filter }, ['.']).then(_ => {
+  return tar.create({file: tgzName, C: path, filter}, ['.']).then(_ => {
     core.info(`Compressed ${path} directory to file ${tgzName}`)
   })
 }
@@ -45,7 +45,7 @@ export async function addCollectionsMetadataFile() {
   // Add tag if parseable
   if (ref.includes('refs/tags/')) {
     const tag = ref.replace('refs/tags/', '')
-    sourceInformation = { ...sourceInformation, tag }
+    sourceInformation = {...sourceInformation, tag}
   }
 
   const metadata: DevContainerCollectionMetadata = {

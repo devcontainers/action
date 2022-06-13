@@ -4,6 +4,7 @@
  *-------------------------------------------------------------------------------------------------------------*/
 
 import * as core from '@actions/core'
+import {generateFeaturesDocumentation} from './generateDocs'
 import {
   addCollectionsMetadataFile,
   getFeaturesAndPackage,
@@ -34,15 +35,16 @@ async function run(): Promise<void> {
   }
 
   if (shouldGenerateDocumentation) {
-    core.info('Generating documentation...');
+    core.info('Generating documentation...')
     const featuresBasePath = core.getInput('base-path-to-features')
     if (featuresBasePath) {
       await generateFeaturesDocumentation(featuresBasePath)
     } else {
-      core.error("'base-path-to-features' input is required to generate documentation");
+      core.error(
+        "'base-path-to-features' input is required to generate documentation"
+      )
     }
     // TODO: base-path-to-templates
-    
   }
 
   // TODO: Programatically add feature/template fino with relevant metadata for UX clients.
