@@ -17,7 +17,7 @@ export async function generateFeaturesDocumentation(basePath: string) {
     files.forEach(f => {
       core.info(`Generating docs for feature '${f}'`)
       if (f !== '.' && f !== '..') {
-        const readmePath = path.join(basePath, f, 'src', 'README.md')
+        const readmePath = path.join(basePath, f, 'README.md')
 
         // Reads in feature.json
         const featureJsonPath = path.join(
