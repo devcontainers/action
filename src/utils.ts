@@ -2,13 +2,13 @@ import * as github from '@actions/github'
 import * as tar from 'tar'
 import * as fs from 'fs'
 import * as core from '@actions/core'
-import { promisify } from 'util'
+import {promisify} from 'util'
 import path from 'path'
 import {
   DevContainerCollectionMetadata,
   SourceInformation
 } from './contracts/collection'
-import { Feature } from './contracts/features'
+import {Feature} from './contracts/features'
 
 export const readLocalFile = promisify(fs.readFile)
 export const writeLocalFile = promisify(fs.writeFile)
@@ -25,7 +25,7 @@ const filter = (file: string, _: tar.FileStat) => {
 }
 
 export async function tarDirectory(path: string, tgzName: string) {
-  return tar.create({ file: tgzName, C: path, filter }, ['.']).then(_ => {
+  return tar.create({file: tgzName, C: path, filter}, ['.']).then(_ => {
     core.info(`Compressed ${path} directory to file ${tgzName}`)
   })
 }
@@ -49,7 +49,7 @@ export async function addCollectionsMetadataFile(
   // Add tag if parseable
   if (ref.includes('refs/tags/')) {
     const tag = ref.replace('refs/tags/', '')
-    sourceInformation = { ...sourceInformation, tag }
+    sourceInformation = {...sourceInformation, tag}
   }
 
   const metadata: DevContainerCollectionMetadata = {
@@ -65,27 +65,25 @@ export async function addCollectionsMetadataFile(
 export async function getFeaturesAndPackage(
   basePath: string
 ): Promise<Feature[] | undefined> {
+  const featureDirs = fs.readdirSync(basePath)
   let metadatas: Feature[] = []
-  fs.readdir(basePath, (err, files) => {
-    if (err) {
-      core.error(err.message)
-      core.setFailed(`failed to get list of features: ${err.message}`)
-      return
-    }
 
-    files.forEach(file => {
-      core.info(`feature ==> ${file}`)
-      if (file !== '.' && file !== '..') {
-        const featureFolder = path.join(basePath, file)
-        const archiveName = `${file}.tgz`
-        tarDirectory(`${basePath}/${file}`, archiveName)
+  await Promise.all(
+    featureDirs.map(async (f: string) => {
+      core.info(`feature ==> ${f}`)
+      if (f !== '.' && f !== '..') {
+        const featureFolder = path.join(basePath, f)
+        const archiveName = `${f}.tgz`
+
+        await tarDirectory(`${basePath}/${f}`, archiveName)
 
         const featureJsonPath = path.join(
           featureFolder,
           'devcontainer-feature.json'
         )
+
         if (!fs.existsSync(featureJsonPath)) {
-          core.error(`Feature ${file} is missing a devcontainer-feature.json`)
+          core.error(`Feature ${f} is missing a devcontainer-feature.json`)
           core.setFailed('All features must have a devcontainer-feature.json')
           return
         }
@@ -96,7 +94,12 @@ export async function getFeaturesAndPackage(
         metadatas.push(featureMetadata)
       }
     })
-  })
+  )
+
+  if (metadatas.length === 0) {
+    core.setFailed('No features found')
+    return
+  }
 
   return metadatas
 }

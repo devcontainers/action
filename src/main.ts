@@ -53,7 +53,7 @@ async function run(): Promise<void> {
   }
 
   // TODO: Programatically add feature/template fino with relevant metadata for UX clients.
-  core.info('Generation metadata file: devcontainer-collection.json')
+  core.info('Generating metadata file: devcontainer-collection.json')
   await addCollectionsMetadataFile(featuresMetadata, templatesMetadata)
 }
 
@@ -84,4 +84,4 @@ async function packageTemplates(basePath: string): Promise<void> {
   }
 }
 
-run();
+run()
