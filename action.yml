@@ -22,13 +22,13 @@ inputs:
   # 'features' options
   base-path-to-features:
     required: false
-    default: './features/src'
+    default: ''
     description: "Relative path to the 'src' folder containing dev container 'feature(s)'"
 
   # 'template' options
   base-path-to-templates:
     required: false
-    default: './templates/src'
+    default: ''
     description: "Relative path to the folder containing dev container 'template(s)'"
 
 runs:
