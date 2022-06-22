@@ -126,14 +126,11 @@ const README_TEMPLATE = `
 ## Example Usage
 
 \`\`\`json
-"features": [
-    {
-        "id": "#{nwo}/#{featureId}@#{versionTag}",
-        "options": {
+"features": {
+        "#{nwo}/#{featureId}@#{versionTag}": {
             "version": "latest"
         }
-    }
-]
+}
 \`\`\`
 
 ## Options
