@@ -2,7 +2,7 @@ import * as fs from 'fs'
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import * as path from 'path'
-import { Feature } from './contracts/features'
+import {Feature} from './contracts/features'
 
 export async function generateFeaturesDocumentation(basePath: string) {
   fs.readdir(basePath, (err, files) => {
@@ -68,8 +68,9 @@ export async function generateFeaturesDocumentation(basePath: string) {
           const contents = keys
             .map(k => {
               const val = options[k]
-              return `| ${k} | ${val.description || '-'} | ${val.type || '-'
-                } | ${val.default || '-'} |`
+              return `| ${k} | ${val.description || '-'} | ${
+                val.type || '-'
+              } | ${val.default || '-'} |`
             })
             .join('\n')
 

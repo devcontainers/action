@@ -1,3 +1,5 @@
+import {Feature} from './features'
+
 export interface SourceInformation {
   source: string // local, github, tarball
   owner?: string
@@ -9,6 +11,6 @@ export interface SourceInformation {
 
 export interface DevContainerCollectionMetadata {
   sourceInformation: SourceInformation
-  features: []
+  features: Feature[]
   templates: []
 }

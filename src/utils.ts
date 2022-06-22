@@ -2,12 +2,13 @@ import * as github from '@actions/github'
 import * as tar from 'tar'
 import * as fs from 'fs'
 import * as core from '@actions/core'
-import {promisify} from 'util'
+import { promisify } from 'util'
 import path from 'path'
 import {
   DevContainerCollectionMetadata,
   SourceInformation
 } from './contracts/collection'
+import { Feature } from './contracts/features'
 
 export const readLocalFile = promisify(fs.readFile)
 export const writeLocalFile = promisify(fs.writeFile)
@@ -24,12 +25,15 @@ const filter = (file: string, _: tar.FileStat) => {
 }
 
 export async function tarDirectory(path: string, tgzName: string) {
-  return tar.create({file: tgzName, C: path, filter}, ['.']).then(_ => {
+  return tar.create({ file: tgzName, C: path, filter }, ['.']).then(_ => {
     core.info(`Compressed ${path} directory to file ${tgzName}`)
   })
 }
 
-export async function addCollectionsMetadataFile() {
+export async function addCollectionsMetadataFile(
+  featuresMetadata: Feature[] | undefined,
+  templatesMetadata: undefined
+) {
   const p = path.join('.', 'devcontainer-collection.json')
 
   // Insert github repo metadata
@@ -45,21 +49,23 @@ export async function addCollectionsMetadataFile() {
   // Add tag if parseable
   if (ref.includes('refs/tags/')) {
     const tag = ref.replace('refs/tags/', '')
-    sourceInformation = {...sourceInformation, tag}
+    sourceInformation = { ...sourceInformation, tag }
   }
 
   const metadata: DevContainerCollectionMetadata = {
     sourceInformation,
-    features: [],
-    templates: []
+    features: featuresMetadata || [],
+    templates: templatesMetadata || []
   }
 
   // Write to the file
   await writeLocalFile(p, JSON.stringify(metadata, undefined, 4))
 }
 
-export async function getFeaturesAndPackage(basePath: string) {
-  let archives: string[] = []
+export async function getFeaturesAndPackage(
+  basePath: string
+): Promise<Feature[] | undefined> {
+  let metadatas: Feature[] = []
   fs.readdir(basePath, (err, files) => {
     if (err) {
       core.error(err.message)
@@ -70,14 +76,29 @@ export async function getFeaturesAndPackage(basePath: string) {
     files.forEach(file => {
       core.info(`feature ==> ${file}`)
       if (file !== '.' && file !== '..') {
+        const featureFolder = path.join(basePath, file)
         const archiveName = `${file}.tgz`
         tarDirectory(`${basePath}/${file}`, archiveName)
-        archives.push(archiveName)
+
+        const featureJsonPath = path.join(
+          featureFolder,
+          'devcontainer-feature.json'
+        )
+        if (!fs.existsSync(featureJsonPath)) {
+          core.error(`Feature ${file} is missing a devcontainer-feature.json`)
+          core.setFailed('All features must have a devcontainer-feature.json')
+          return
+        }
+
+        const featureMetadata: Feature = JSON.parse(
+          fs.readFileSync(featureJsonPath, 'utf8')
+        )
+        metadatas.push(featureMetadata)
       }
     })
   })
 
-  return archives
+  return metadatas
 }
 
 export async function getTemplatesAndPackage(basePath: string) {

@@ -4,7 +4,8 @@
  *-------------------------------------------------------------------------------------------------------------*/
 
 import * as core from '@actions/core'
-import {generateFeaturesDocumentation} from './generateDocs'
+import { Feature } from './contracts/features'
+import { generateFeaturesDocumentation } from './generateDocs'
 import {
   addCollectionsMetadataFile,
   getFeaturesAndPackage,
@@ -22,15 +23,19 @@ async function run(): Promise<void> {
   const shouldGenerateDocumentation =
     core.getInput('generate-docs').toLowerCase() === 'true'
 
+  let featuresMetadata = undefined
+  let templatesMetadata = undefined
+
   if (shouldPublishFeatures) {
     core.info('Publishing features...')
     const featuresBasePath = core.getInput('base-path-to-features')
-    await packageFeatures(featuresBasePath)
+    featuresMetadata = await packageFeatures(featuresBasePath)
   }
 
   if (shouldPublishTemplate) {
     core.info('Publishing template...')
     const basePathToDefinitions = core.getInput('base-path-to-templates')
+    templatesMetadata = undefined // TODO
     await packageTemplates(basePathToDefinitions)
   }
 
@@ -49,18 +54,23 @@ async function run(): Promise<void> {
 
   // TODO: Programatically add feature/template fino with relevant metadata for UX clients.
   core.info('Generation metadata file: devcontainer-collection.json')
-  await addCollectionsMetadataFile()
+  await addCollectionsMetadataFile(featuresMetadata, templatesMetadata)
 }
 
-async function packageFeatures(basePath: string): Promise<void> {
+async function packageFeatures(
+  basePath: string
+): Promise<Feature[] | undefined> {
   try {
     core.info(`Archiving all features in ${basePath}`)
-    await getFeaturesAndPackage(basePath)
-
+    const metadata = await getFeaturesAndPackage(basePath)
     core.info('Packaging features has finished.')
+    return metadata
   } catch (error) {
-    if (error instanceof Error) core.setFailed(error.message)
+    if (error instanceof Error) {
+      core.setFailed(error.message)
+    }
   }
+  return
 }
 
 async function packageTemplates(basePath: string): Promise<void> {
@@ -74,5 +84,4 @@ async function packageTemplates(basePath: string): Promise<void> {
   }
 }
 
-// Kick off execution
-run()
+run();
