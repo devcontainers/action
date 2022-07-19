@@ -29,12 +29,14 @@
   "dependencies": {
     "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.3",
+    "@types/pacote": "^11.1.5",
     "jsonc-parser": "^3.0.0",
-    "tar": "^6.1.11"
+    "libnpmpublish": "^6.0.4",
+    "pacote": "^13.6.1"
   },
   "devDependencies": {
-    "@types/node": "^16.11.6",
-    "@types/tar": "^6.1.1",
+    "@types/libnpmpublish": "^4.0.3",
+    "@types/node": "^16.11.45",
     "@vercel/ncc": "^0.34.0",
     "copyfiles": "^2.4.1",
     "eslint": "^8.7.0",

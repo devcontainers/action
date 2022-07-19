@@ -31,6 +31,12 @@ inputs:
     default: ''
     description: "Relative path to the folder containing dev container 'template(s)'"
 
+  # NPM
+  publish-to-npm:
+    required: false
+    default: "false"
+    description: "Should publish features to NPM?"
+
 runs:
   using: 'node16'
   main: 'dist/index.js'
