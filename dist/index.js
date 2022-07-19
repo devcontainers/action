@@ -379,6 +379,7 @@ function getFeaturesAndPackage(basePath, publishToNPM = false) {
     return __awaiter(this, void 0, void 0, function* () {
         const featureDirs = fs.readdirSync(basePath);
         let metadatas = [];
+        const exec = (0, util_1.promisify)(child_process.exec);
         yield Promise.all(featureDirs.map((f) => __awaiter(this, void 0, void 0, function* () {
             var _a;
             core.info(`feature ==> ${f}`);
@@ -405,20 +406,17 @@ function getFeaturesAndPackage(basePath, publishToNPM = false) {
                         name: `@${sourceInfo.owner}/${sourceInfo.repo}-${f}`,
                         version: `${sourceInfo.tag}`,
                         description: `${(_a = featureMetadata.description) !== null && _a !== void 0 ? _a : 'My cool feature'}`,
-                        repository: {
-                            type: 'git',
-                            url: `https://github.com/${sourceInfo.owner}/${sourceInfo.repo}.git`
-                        },
                         author: `${sourceInfo.owner}`
                     };
                     yield (0, exports.writeLocalFile)(packageJsonPath, JSON.stringify(packageJsonObject, undefined, 4));
                     // const tarData = await pac.tarball(featureFolder);
                     // const archiveName = `${sourceInfo.owner}-${sourceInfo.repo}-${f}.tgz`; // TODO: changed this!
                     core.info(`Feature Folder is: ${featureFolder}`);
-                    const packageName = child_process.execSync(`npm pack ./${featureFolder}`);
-                    core.info(`GENERATED: ${packageName.toString()}`);
-                    const output2 = child_process.execSync(`npm publish ${packageName} --access public`);
-                    core.info(output2.toString());
+                    const packageName = yield exec(`npm pack ./${featureFolder}`);
+                    core.info(`GENERATED: ${packageName.stdout.toString()}`);
+                    core.info(`ERR: ${packageName.stderr.toString()}`);
+                    const output2 = yield exec(`npm publish --access public "${packageName.stdout.toString().trim()}"`);
+                    core.info(output2.stdout.toString() + ' .... ' + output2.stderr.toString());
                 }
                 // TODO: Old way, GitHub release
                 // await tarDirectory(featureFolder, archiveName);

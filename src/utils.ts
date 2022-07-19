@@ -67,6 +67,7 @@ export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | u
 export async function getFeaturesAndPackage(basePath: string, publishToNPM = false): Promise<Feature[] | undefined> {
     const featureDirs = fs.readdirSync(basePath);
     let metadatas: Feature[] = [];
+    const exec = promisify(child_process.exec);
 
     await Promise.all(
         featureDirs.map(async (f: string) => {
@@ -100,10 +101,6 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
                         name: `@${sourceInfo.owner}/${sourceInfo.repo}-${f}`,
                         version: `${sourceInfo.tag}`,
                         description: `${featureMetadata.description ?? 'My cool feature'}`,
-                        repository: {
-                            type: 'git',
-                            url: `https://github.com/${sourceInfo.owner}/${sourceInfo.repo}.git`
-                        },
                         author: `${sourceInfo.owner}`
                     };
                     await writeLocalFile(packageJsonPath, JSON.stringify(packageJsonObject, undefined, 4));
@@ -113,11 +110,12 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
 
                     core.info(`Feature Folder is: ${featureFolder}`);
 
-                    const packageName = child_process.execSync(`npm pack ./${featureFolder}`);
-                    core.info(`GENERATED: ${packageName.toString()}`);
+                    const packageName = await exec(`npm pack ./${featureFolder}`);
+                    core.info(`GENERATED: ${packageName.stdout.toString()}`);
+                    core.info(`ERR: ${packageName.stderr.toString()}`);
 
-                    const output2 = child_process.execSync(`npm publish ${packageName} --access public`);
-                    core.info(output2.toString());
+                    const output2 = await exec(`npm publish --access public "${packageName.stdout.toString().trim()}"`);
+                    core.info(output2.stdout.toString() + ' .... ' + output2.stderr.toString());
                 }
 
                 // TODO: Old way, GitHub release
