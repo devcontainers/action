@@ -30,6 +30,7 @@ async function run(): Promise<void> {
 
     if (shouldPublishFeatures) {
         core.info('Publishing features...');
+        core.info(`Publishing to npm? --> ${shouldPublishToNPM}`);
         featuresMetadata = await packageFeatures(featuresBasePath, shouldPublishToNPM);
     }
 

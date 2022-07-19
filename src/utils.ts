@@ -8,8 +8,6 @@ import path from 'path';
 import { DevContainerCollectionMetadata, SourceInformation } from './contracts/collection';
 import { Feature } from './contracts/features';
 import { Template } from './contracts/templates';
-import * as libpub from 'libnpmpublish';
-import * as pac from 'pacote';
 
 export const readLocalFile = promisify(fs.readFile);
 export const writeLocalFile = promisify(fs.writeFile);
@@ -92,6 +90,7 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
                 // Adds a package.json file to the feature folder
                 const packageJsonPath = path.join(featureFolder, 'package.json');
                 if (publishToNPM) {
+                    core.info(`Publishing to NPM`);
                     if (!sourceInfo.tag) {
                         core.error(`Feature ${f} is missing a tag! Cannot publish to NPM.`);
                         core.setFailed('All features published to NPM must be tagged with a version');
@@ -109,14 +108,19 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
                     };
                     await writeLocalFile(packageJsonPath, JSON.stringify(packageJsonObject, undefined, 4));
 
-                    // const output = child_process.execSync(`npm publish ${archiveName} --access public`);
-                    // core.info(output.toString());
-                    const tarData = await pac.tarball(featureFolder);
-                    await libpub.publish(packageJsonObject, tarData, {});
+                    // const tarData = await pac.tarball(featureFolder);
+                    // const archiveName = `${sourceInfo.owner}-${sourceInfo.repo}-${f}.tgz`; // TODO: changed this!
+
+                    core.info(`Feature Folder is: ${featureFolder}`);
+
+                    const packageName = child_process.execSync(`npm pack ./${featureFolder}`);
+                    core.info(`GENERATED: ${packageName.toString()}`);
+
+                    const output2 = child_process.execSync(`npm publish ${packageName} --access public`);
+                    core.info(output2.toString());
                 }
 
                 // TODO: Old way, GitHub release
-                // const archiveName = `${sourceInfo.owner}-${sourceInfo.repo}-${f}.tgz`; // TODO: changed this!
                 // await tarDirectory(featureFolder, archiveName);
             }
         })
