@@ -106,7 +106,10 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
                         name: `@${sourceInfo.owner}/${f}`,
                         version: featureMetadata.version,
                         description: `${featureMetadata.description ?? 'My cool feature'}`,
-                        author: `${sourceInfo.owner}`
+                        author: `${sourceInfo.owner}`,
+                        "keywords": [
+                            "devcontainer-features"
+                          ],
                     };
                     await writeLocalFile(packageJsonPath, JSON.stringify(packageJsonObject, undefined, 4));
 
