@@ -29,12 +29,13 @@
   "dependencies": {
     "@actions/core": "^1.6.0",
     "@actions/github": "^5.0.3",
-    "@types/tar": "^6.1.1",
     "jsonc-parser": "^3.0.0",
+    "minipass": "3.2.1",
     "tar": "^6.1.11"
   },
   "devDependencies": {
-    "@types/node": "^16.11.45",
+    "@types/node": "^16.11.6",
+    "@types/tar": "^6.1.1",
     "@vercel/ncc": "^0.34.0",
     "copyfiles": "^2.4.1",
     "eslint": "^8.7.0",

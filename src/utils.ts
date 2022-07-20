@@ -90,9 +90,25 @@ async function tagFeatureAtVersion(featureMetaData: Feature) {
     });
 
     if (createdTag.status === 201) {
-        core.info(`Tagged ${tagName}.`);
+        core.info(`Tagged '${tagName}'`);
     } else {
-        core.setFailed(`Failed to tag ${tagName}.`);
+        core.setFailed(`Failed to tag '${tagName}'`);
+        return;
+    }
+
+    // Create reference to tag
+    const createdRef = await octokit.rest.git.createRef({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        ref: `refs/tags/${tagName}`,
+        sha: createdTag.data.sha
+    });
+
+    if (createdRef.status === 201) {
+        core.info(`Created reference for '${tagName}'`);
+    } else {
+        core.setFailed(`Failed to reference of tag '${tagName}'`);
+        return;
     }
 }
 
