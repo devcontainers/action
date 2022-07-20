@@ -97,10 +97,10 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
                 const packageJsonPath = path.join(featureFolder, 'package.json');
                 if (publishToNPM) {
                     core.info(`Publishing to NPM`);
-                    if (!sourceInfo.tag) {
-                        core.error(`Feature ${f} is missing a tag! Cannot publish to NPM.`);
-                        core.setFailed('All features published to NPM must be tagged with a version');
-                    }
+                    // if (!sourceInfo.tag) {
+                    //     core.error(`Feature ${f} is missing a tag! Cannot publish to NPM.`);
+                    //     core.setFailed('All features published to NPM must be tagged with a version');
+                    // }
 
                     const packageJsonObject = {
                         name: `@${sourceInfo.owner}/${f}`,
