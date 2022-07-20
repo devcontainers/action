@@ -1,5 +1,5 @@
 import * as github from '@actions/github';
-// import * as tar from 'tar';
+import * as tar from 'tar';
 import * as fs from 'fs';
 import * as core from '@actions/core';
 import * as child_process from 'child_process';
@@ -8,6 +8,7 @@ import path from 'path';
 import { DevContainerCollectionMetadata, GitHubMetadata } from './contracts/collection';
 import { Feature } from './contracts/features';
 import { Template } from './contracts/templates';
+import { PackagingOptions } from './main';
 
 export const readLocalFile = promisify(fs.readFile);
 export const writeLocalFile = promisify(fs.writeFile);
@@ -15,19 +16,19 @@ export const mkdirLocal = promisify(fs.mkdir);
 export const renameLocal = promisify(fs.rename);
 
 // Filter what gets included in the tar.c
-// const filter = (file: string, _: tar.FileStat) => {
-//     // Don't include the archive itself.
-//     if (file === './devcontainer-features.tgz') {
-//         return false;
-//     }
-//     return true;
-// };
+const filter = (file: string, _: tar.FileStat) => {
+    // Don't include the archive itself.
+    if (file === './devcontainer-features.tgz') {
+        return false;
+    }
+    return true;
+};
 
-// export async function tarDirectory(path: string, tgzName: string) {
-//     return tar.create({ file: tgzName, C: path, filter }, ['.']).then(_ => {
-//         core.info(`Compressed ${path} directory to file ${tgzName}`);
-//     });
-// }
+export async function tarDirectory(path: string, tgzName: string) {
+    return tar.create({ file: tgzName, C: path, filter }, ['.']).then(_ => {
+        core.info(`Compressed ${path} directory to file ${tgzName}`);
+    });
+}
 
 function getGitHubMetadata() {
     // Insert github repo metadata
@@ -48,6 +49,53 @@ function getGitHubMetadata() {
     return sourceInformation;
 }
 
+async function tagFeatureAtVersion(featureMetaData: Feature) {
+    const featureId = featureMetaData.id;
+    const featureVersion = featureMetaData.version;
+
+    const tagName = `${featureId}_v${featureVersion}`;
+
+    // Get GITHUB_TOKEN from environment
+    const githubToken = process.env.GITHUB_TOKEN;
+    if (!githubToken) {
+        core.setFailed('GITHUB_TOKEN environment variable is not set.');
+        return;
+    }
+
+    // Setup Octokit client
+    const octokit = github.getOctokit(githubToken);
+
+    // Use octokit to get all tags for this repo
+    const tags = await octokit.rest.repos.listTags({
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo
+    });
+
+    // See if tags for this release was already created.
+    const tagExists = tags.data.some(tag => tag.name === tagName);
+
+    if (tagExists) {
+        core.info(`Tag ${tagName} already exists. Skipping...`);
+        return;
+    }
+
+    // Create tag
+    const createdTag = await octokit.rest.git.createTag({
+        tag: tagName,
+        message: `Feature ${featureId} version ${featureVersion}`,
+        object: github.context.sha,
+        type: 'commit',
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo
+    });
+
+    if (createdTag.status === 201) {
+        core.info(`Tagged ${tagName}.`);
+    } else {
+        core.setFailed(`Failed to tag ${tagName}.`);
+    }
+}
+
 export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | undefined, templatesMetadata: Template[] | undefined) {
     const p = path.join('.', 'devcontainer-collection.json');
 
@@ -63,7 +111,8 @@ export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | u
     await writeLocalFile(p, JSON.stringify(metadata, undefined, 4));
 }
 
-export async function getFeaturesAndPackage(basePath: string, publishToNPM = false): Promise<Feature[] | undefined> {
+export async function getFeaturesAndPackage(basePath: string, opts: PackagingOptions): Promise<Feature[] | undefined> {
+    const { shouldPublishToNPM, shouldTagIndividualFeatures, shouldPublishReleaseArtifacts } = opts;
     const featureDirs = fs.readdirSync(basePath);
     let metadatas: Feature[] = [];
     const exec = promisify(child_process.exec);
@@ -93,10 +142,17 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
 
                 const sourceInfo = getGitHubMetadata();
 
-                // Adds a package.json file to the feature folder
-                const packageJsonPath = path.join(featureFolder, 'package.json');
-                if (publishToNPM) {
-                    core.info(`Publishing to NPM`);
+                // ---- TAG INDIVIDUAL FEATURES ----
+                if (shouldTagIndividualFeatures) {
+                    core.info(`** Tagging individual feature`);
+                    await tagFeatureAtVersion(featureMetadata);
+                }
+
+                // ---- PUBLISH TO NPM ----
+                if (shouldPublishToNPM) {
+                    core.info(`** Publishing to NPM`);
+                    // Adds a package.json file to the feature folder
+                    const packageJsonPath = path.join(featureFolder, 'package.json');
                     // if (!sourceInfo.tag) {
                     //     core.error(`Feature ${f} is missing a tag! Cannot publish to NPM.`);
                     //     core.setFailed('All features published to NPM must be tagged with a version');
@@ -107,16 +163,9 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
                         version: featureMetadata.version,
                         description: `${featureMetadata.description ?? 'My cool feature'}`,
                         author: `${sourceInfo.owner}`,
-                        "keywords": [
-                            "devcontainer-features"
-                          ],
+                        keywords: ['devcontainer-features']
                     };
                     await writeLocalFile(packageJsonPath, JSON.stringify(packageJsonObject, undefined, 4));
-
-                    // const tarData = await pac.tarball(featureFolder);
-                    // const archiveName = `${sourceInfo.owner}-${sourceInfo.repo}-${f}.tgz`; // TODO: changed this!
-                    // TODO: Old way, GitHub release
-                    // await tarDirectory(featureFolder, archiveName);
 
                     core.info(`Feature Folder is: ${featureFolder}`);
 
@@ -131,6 +180,13 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
                     if (publishOutput.stderr) {
                         core.error(`${publishOutput.stderr}`);
                     }
+                }
+
+                // ---- PUBLISH RELEASE ARTIFACTS (classic method) ----
+                if (shouldPublishReleaseArtifacts) {
+                    core.info(`** Publishing release`);
+                    const archiveName = `${f}.tgz`;
+                    await tarDirectory(featureFolder, archiveName);
                 }
             }
         })

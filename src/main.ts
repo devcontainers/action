@@ -9,7 +9,11 @@ import { Template } from './contracts/templates';
 import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
 import { addCollectionsMetadataFile, getFeaturesAndPackage, getTemplatesAndPackage } from './utils';
 
-import process from 'node:process';
+export interface PackagingOptions {
+    shouldTagIndividualFeatures: boolean;
+    shouldPublishToNPM: boolean;
+    shouldPublishReleaseArtifacts: boolean;
+}
 
 async function run(): Promise<void> {
     core.debug('Reading input parameters...');
@@ -18,7 +22,17 @@ async function run(): Promise<void> {
     const shouldPublishFeatures = core.getInput('publish-features').toLowerCase() === 'true';
     const shouldPublishTemplates = core.getInput('publish-templates').toLowerCase() === 'true';
     const shouldGenerateDocumentation = core.getInput('generate-docs').toLowerCase() === 'true';
+
+    // Experimental
+    const shouldTagIndividualFeatures = core.getInput('tag-individual-features').toLowerCase() === 'true';
     const shouldPublishToNPM = core.getInput('publish-to-npm').toLowerCase() === 'true';
+    const shouldPublishReleaseArtifacts = core.getInput('publish-release-artifacts').toLowerCase() === 'true';
+
+    const opts: PackagingOptions = {
+        shouldTagIndividualFeatures,
+        shouldPublishToNPM,
+        shouldPublishReleaseArtifacts
+    };
 
     const featuresBasePath = core.getInput('base-path-to-features');
     const templatesBasePath = core.getInput('base-path-to-templates');
@@ -30,7 +44,7 @@ async function run(): Promise<void> {
 
     if (shouldPublishFeatures) {
         core.info('Publishing features...');
-        featuresMetadata = await packageFeatures(featuresBasePath, shouldPublishToNPM);
+        featuresMetadata = await packageFeatures(featuresBasePath, opts);
     }
 
     if (shouldPublishTemplates) {
@@ -56,10 +70,10 @@ async function run(): Promise<void> {
     await addCollectionsMetadataFile(featuresMetadata, templatesMetadata);
 }
 
-async function packageFeatures(basePath: string, publishToNpm = false): Promise<Feature[] | undefined> {
+async function packageFeatures(basePath: string, opts: PackagingOptions): Promise<Feature[] | undefined> {
     try {
         core.info(`Archiving all features in ${basePath}`);
-        const metadata = await getFeaturesAndPackage(basePath, publishToNpm);
+        const metadata = await getFeaturesAndPackage(basePath, opts);
         core.info('Packaging features has finished.');
         return metadata;
     } catch (error) {

@@ -31,11 +31,19 @@ inputs:
     default: ''
     description: "Relative path to the folder containing dev container 'template(s)'"
 
-  # NPM
+  # EXPERIMENTAL
+  tag-individual-features:
+    required: false
+    default: "false"
+    description: "Tag individual features"
   publish-to-npm:
     required: false
     default: "false"
     description: "Should publish features to NPM?"
+  publish-release-artifacts:
+    required: false
+    default: "false"
+    description: "Publish release artifacts (classic)"
 
 runs:
   using: 'node16'
