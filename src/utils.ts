@@ -5,7 +5,7 @@ import * as core from '@actions/core';
 import * as child_process from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
-import { DevContainerCollectionMetadata, SourceInformation } from './contracts/collection';
+import { DevContainerCollectionMetadata, GitHubMetadata } from './contracts/collection';
 import { Feature } from './contracts/features';
 import { Template } from './contracts/templates';
 
@@ -29,11 +29,10 @@ export const renameLocal = promisify(fs.rename);
 //     });
 // }
 
-function getSourceInfo() {
+function getGitHubMetadata() {
     // Insert github repo metadata
     const ref = github.context.ref;
-    let sourceInformation: SourceInformation = {
-        source: 'github',
+    let sourceInformation: GitHubMetadata = {
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         ref,
@@ -52,7 +51,7 @@ function getSourceInfo() {
 export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | undefined, templatesMetadata: Template[] | undefined) {
     const p = path.join('.', 'devcontainer-collection.json');
 
-    const sourceInformation = getSourceInfo();
+    const sourceInformation = getGitHubMetadata();
 
     const metadata: DevContainerCollectionMetadata = {
         sourceInformation,
@@ -84,9 +83,15 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
                 }
 
                 const featureMetadata: Feature = JSON.parse(fs.readFileSync(featureJsonPath, 'utf8'));
+
+                if (!featureMetadata.id || !featureMetadata.version) {
+                    core.error(`Feature '${f}' is must defined an id and version`);
+                    core.setFailed('Incomplete devcontainer-feature.json');
+                }
+
                 metadatas.push(featureMetadata);
 
-                const sourceInfo = getSourceInfo();
+                const sourceInfo = getGitHubMetadata();
 
                 // Adds a package.json file to the feature folder
                 const packageJsonPath = path.join(featureFolder, 'package.json');
@@ -98,8 +103,8 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
                     }
 
                     const packageJsonObject = {
-                        name: `@${sourceInfo.owner}/${sourceInfo.repo}-${f}`,
-                        version: `${sourceInfo.tag}`,
+                        name: `@${sourceInfo.owner}/${f}`,
+                        version: featureMetadata.version,
                         description: `${featureMetadata.description ?? 'My cool feature'}`,
                         author: `${sourceInfo.owner}`
                     };
@@ -107,19 +112,23 @@ export async function getFeaturesAndPackage(basePath: string, publishToNPM = fal
 
                     // const tarData = await pac.tarball(featureFolder);
                     // const archiveName = `${sourceInfo.owner}-${sourceInfo.repo}-${f}.tgz`; // TODO: changed this!
+                    // TODO: Old way, GitHub release
+                    // await tarDirectory(featureFolder, archiveName);
 
                     core.info(`Feature Folder is: ${featureFolder}`);
 
+                    // Run npm pack, which 'tars' the folder
                     const packageName = await exec(`npm pack ./${featureFolder}`);
-                    core.info(`GENERATED: ${packageName.stdout.toString()}`);
-                    core.info(`ERR: ${packageName.stderr.toString()}`);
+                    if (packageName.stderr) {
+                        core.error(`${packageName.stderr.toString()}`);
+                    }
 
-                    const output2 = await exec(`npm publish --access public "${packageName.stdout.toString().trim()}"`);
-                    core.info(output2.stdout.toString() + ' .... ' + output2.stderr.toString());
+                    const publishOutput = await exec(`npm publish --access public "${packageName.stdout.trim()}"`);
+                    core.info(publishOutput.stdout);
+                    if (publishOutput.stderr) {
+                        core.error(`${publishOutput.stderr}`);
+                    }
                 }
-
-                // TODO: Old way, GitHub release
-                // await tarDirectory(featureFolder, archiveName);
             }
         })
     );

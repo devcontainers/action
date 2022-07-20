@@ -3,6 +3,7 @@ import { IOption } from './collection';
 export interface Feature {
     id: string;
     name: string;
+    version: string;
     description?: string;
     filename?: string;
     runApp?: string;

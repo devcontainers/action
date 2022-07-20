@@ -220,7 +220,6 @@ function run() {
         // -- Package Release Artifacts
         if (shouldPublishFeatures) {
             core.info('Publishing features...');
-            core.info(`Publishing to npm? --> ${shouldPublishToNPM}`);
             featuresMetadata = yield packageFeatures(featuresBasePath, shouldPublishToNPM);
         }
         if (shouldPublishTemplates) {
@@ -344,11 +343,10 @@ exports.renameLocal = (0, util_1.promisify)(fs.rename);
 //         core.info(`Compressed ${path} directory to file ${tgzName}`);
 //     });
 // }
-function getSourceInfo() {
+function getGitHubMetadata() {
     // Insert github repo metadata
     const ref = github.context.ref;
     let sourceInformation = {
-        source: 'github',
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         ref,
@@ -364,7 +362,7 @@ function getSourceInfo() {
 function addCollectionsMetadataFile(featuresMetadata, templatesMetadata) {
     return __awaiter(this, void 0, void 0, function* () {
         const p = path_1.default.join('.', 'devcontainer-collection.json');
-        const sourceInformation = getSourceInfo();
+        const sourceInformation = getGitHubMetadata();
         const metadata = {
             sourceInformation,
             features: featuresMetadata || [],
@@ -392,8 +390,12 @@ function getFeaturesAndPackage(basePath, publishToNPM = false) {
                     return;
                 }
                 const featureMetadata = JSON.parse(fs.readFileSync(featureJsonPath, 'utf8'));
+                if (!featureMetadata.id || !featureMetadata.version) {
+                    core.error(`Feature '${f}' is must defined an id and version`);
+                    core.setFailed('Incomplete devcontainer-feature.json');
+                }
                 metadatas.push(featureMetadata);
-                const sourceInfo = getSourceInfo();
+                const sourceInfo = getGitHubMetadata();
                 // Adds a package.json file to the feature folder
                 const packageJsonPath = path_1.default.join(featureFolder, 'package.json');
                 if (publishToNPM) {
@@ -403,23 +405,28 @@ function getFeaturesAndPackage(basePath, publishToNPM = false) {
                         core.setFailed('All features published to NPM must be tagged with a version');
                     }
                     const packageJsonObject = {
-                        name: `@${sourceInfo.owner}/${sourceInfo.repo}-${f}`,
-                        version: `${sourceInfo.tag}`,
+                        name: `@${sourceInfo.owner}/${f}`,
+                        version: featureMetadata.version,
                         description: `${(_a = featureMetadata.description) !== null && _a !== void 0 ? _a : 'My cool feature'}`,
                         author: `${sourceInfo.owner}`
                     };
                     yield (0, exports.writeLocalFile)(packageJsonPath, JSON.stringify(packageJsonObject, undefined, 4));
                     // const tarData = await pac.tarball(featureFolder);
                     // const archiveName = `${sourceInfo.owner}-${sourceInfo.repo}-${f}.tgz`; // TODO: changed this!
+                    // TODO: Old way, GitHub release
+                    // await tarDirectory(featureFolder, archiveName);
                     core.info(`Feature Folder is: ${featureFolder}`);
+                    // Run npm pack, which 'tars' the folder
                     const packageName = yield exec(`npm pack ./${featureFolder}`);
-                    core.info(`GENERATED: ${packageName.stdout.toString()}`);
-                    core.info(`ERR: ${packageName.stderr.toString()}`);
-                    const output2 = yield exec(`npm publish --access public "${packageName.stdout.toString().trim()}"`);
-                    core.info(output2.stdout.toString() + ' .... ' + output2.stderr.toString());
+                    if (packageName.stderr) {
+                        core.error(`${packageName.stderr.toString()}`);
+                    }
+                    const publishOutput = yield exec(`npm publish --access public "${packageName.stdout.trim()}"`);
+                    core.info(publishOutput.stdout);
+                    if (publishOutput.stderr) {
+                        core.error(`${publishOutput.stderr}`);
+                    }
                 }
-                // TODO: Old way, GitHub release
-                // await tarDirectory(featureFolder, archiveName);
             }
         })));
         if (metadatas.length === 0) {

@@ -1,8 +1,7 @@
 import { Feature } from './features';
 import { Template } from './templates';
 
-export interface SourceInformation {
-    source: string; // local, github, tarball
+export interface GitHubMetadata {
     owner?: string;
     repo?: string;
     tag?: string;
@@ -11,7 +10,7 @@ export interface SourceInformation {
 }
 
 export interface DevContainerCollectionMetadata {
-    sourceInformation: SourceInformation;
+    sourceInformation: GitHubMetadata;
     features: Feature[];
     templates: Template[];
 }
