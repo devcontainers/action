@@ -129,23 +129,53 @@ export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | u
 
 async function pushArtifactToOCI(repositoryOwner: string, version: string, featureName: string, artifactPath: string): Promise<void> {
     const exec = promisify(child_process.exec);
-    const ociRepo = `${repositoryOwner}/${featureName}:${version}`;
-    try {
-      const cmd: string = `oras push ghcr.io/${ociRepo} \
-      --manifest-config /dev/null:application/vnd.devcontainers \
-                        ./${artifactPath}:application/vnd.devcontainers.layer.v1+tar`;
-      await exec(cmd);
-      console.log(`Pushed artifact to '${ociRepo}'`)
-    } catch (error) {
-      if (error instanceof Error) core.setFailed(`Failed to push '${ociRepo}':  ${error.message}`);
+
+    const versions = [version, '1.0', '1']; // TODO: don't hardcode ofc.
+
+    await Promise.all(
+        versions.map(async (v: string) => {
+            core.info(`Starting to push artifact (tag ${v}) to OCI...`);
+            const ociRepo = `${repositoryOwner}/${featureName}:${v}`;
+            try {
+                const cmd: string = `oras push ghcr.io/${ociRepo} \
+              --manifest-config /dev/null:application/vnd.devcontainers \
+                                ./${artifactPath}:application/vnd.devcontainers.layer.v1+tar`;
+                await exec(cmd);
+                core.info(`Pushed artifact to '${ociRepo}'`);
+            } catch (error) {
+                if (error instanceof Error) core.setFailed(`Failed to push '${ociRepo}':  ${error.message}`);
+            }
+        })
+    );
+}
+
+async function loginToGHCR(): Promise<void> {
+    const exec = promisify(child_process.exec);
+
+    // Get GITHUB_TOKEN from environment
+    const githubToken = process.env.GITHUB_TOKEN;
+    if (!githubToken) {
+        core.setFailed('GITHUB_TOKEN environment variable is not set.');
+        return;
     }
-  }
+
+    try {
+        await exec(`oras login ghcr.io -u USERNAME -p ${githubToken}`);
+        console.log('Oras logged in successfully!');
+    } catch (error) {
+        if (error instanceof Error) core.setFailed(` Oras login failed!`);
+    }
+}
 
 export async function getFeaturesAndPackage(basePath: string, opts: PackagingOptions): Promise<Feature[] | undefined> {
     const { shouldPublishToNPM, shouldTagIndividualFeatures, shouldPublishReleaseArtifacts, shouldPublishToOCI } = opts;
     const featureDirs = fs.readdirSync(basePath);
     let metadatas: Feature[] = [];
     const exec = promisify(child_process.exec);
+
+    if (shouldPublishToOCI) {
+        await loginToGHCR();
+    }
 
     await Promise.all(
         featureDirs.map(async (f: string) => {
@@ -178,25 +208,16 @@ export async function getFeaturesAndPackage(basePath: string, opts: PackagingOpt
 
                 const archiveName = `${f}.tgz`;
                 // ---- PUBLISH RELEASE ARTIFACTS (classic method) ----
-                if (shouldPublishReleaseArtifacts  || shouldPublishToOCI) {
-                    core.info(`** Publishing release`);
+                if (shouldPublishReleaseArtifacts || shouldPublishToOCI) {
+                    core.info(`** Tar'ing feature`);
                     await tarDirectory(featureFolder, archiveName);
                 }
 
                 // ---- PUBLISH TO NPM ----
                 if (shouldPublishToOCI) {
-                    // HACK TO GET THE GITHUB UI TO NOT 500
+                    core.info(`** Publishing to OCI`);
 
-                    // END HACK
-
-
-                    if (!(await oras.isAvailable())) {
-                        core.setFailed(`Oras is required to generate OCI artifacts.`);
-                        return;
-                      }
-
-                    pushArtifactToOCI(sourceInfo.owner, featureMetadata.version, f, archiveName);
-
+                    await pushArtifactToOCI(sourceInfo.owner, featureMetadata.version, f, archiveName);
                 }
 
                 // ---- TAG INDIVIDUAL FEATURES ----

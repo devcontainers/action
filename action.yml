@@ -44,6 +44,10 @@ inputs:
     required: false
     default: "false"
     description: "Publish release artifacts (classic)"
+  publish-to-oci:
+    required: false
+    default: "false"
+    description: "Publish to OCI?"
 
 runs:
   using: 'node16'

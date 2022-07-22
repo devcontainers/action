@@ -216,10 +216,12 @@ function run() {
         const shouldTagIndividualFeatures = core.getInput('tag-individual-features').toLowerCase() === 'true';
         const shouldPublishToNPM = core.getInput('publish-to-npm').toLowerCase() === 'true';
         const shouldPublishReleaseArtifacts = core.getInput('publish-release-artifacts').toLowerCase() === 'true';
+        const shouldPublishToOCI = core.getInput('publish-to-oci').toLowerCase() === 'true';
         const opts = {
             shouldTagIndividualFeatures,
             shouldPublishToNPM,
-            shouldPublishReleaseArtifacts
+            shouldPublishReleaseArtifacts,
+            shouldPublishToOCI
         };
         const featuresBasePath = core.getInput('base-path-to-features');
         const templatesBasePath = core.getInput('base-path-to-templates');
@@ -440,12 +442,55 @@ function addCollectionsMetadataFile(featuresMetadata, templatesMetadata) {
     });
 }
 exports.addCollectionsMetadataFile = addCollectionsMetadataFile;
+function pushArtifactToOCI(repositoryOwner, version, featureName, artifactPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const exec = (0, util_1.promisify)(child_process.exec);
+        const versions = [version, '1.0', '1']; // TODO: don't hardcode ofc.
+        yield Promise.all(versions.map((v) => __awaiter(this, void 0, void 0, function* () {
+            core.info(`Starting to push artifact (tag ${v}) to OCI...`);
+            const ociRepo = `${repositoryOwner}/${featureName}:${v}`;
+            try {
+                const cmd = `oras push ghcr.io/${ociRepo} \
+              --manifest-config /dev/null:application/vnd.devcontainers \
+                                ./${artifactPath}:application/vnd.devcontainers.layer.v1+tar`;
+                yield exec(cmd);
+                core.info(`Pushed artifact to '${ociRepo}'`);
+            }
+            catch (error) {
+                if (error instanceof Error)
+                    core.setFailed(`Failed to push '${ociRepo}':  ${error.message}`);
+            }
+        })));
+    });
+}
+function loginToGHCR() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const exec = (0, util_1.promisify)(child_process.exec);
+        // Get GITHUB_TOKEN from environment
+        const githubToken = process.env.GITHUB_TOKEN;
+        if (!githubToken) {
+            core.setFailed('GITHUB_TOKEN environment variable is not set.');
+            return;
+        }
+        try {
+            yield exec(`oras login ghcr.io -u USERNAME -p ${githubToken}`);
+            console.log('Oras logged in successfully!');
+        }
+        catch (error) {
+            if (error instanceof Error)
+                core.setFailed(` Oras login failed!`);
+        }
+    });
+}
 function getFeaturesAndPackage(basePath, opts) {
     return __awaiter(this, void 0, void 0, function* () {
-        const { shouldPublishToNPM, shouldTagIndividualFeatures, shouldPublishReleaseArtifacts } = opts;
+        const { shouldPublishToNPM, shouldTagIndividualFeatures, shouldPublishReleaseArtifacts, shouldPublishToOCI } = opts;
         const featureDirs = fs.readdirSync(basePath);
         let metadatas = [];
         const exec = (0, util_1.promisify)(child_process.exec);
+        if (shouldPublishToOCI) {
+            yield loginToGHCR();
+        }
         yield Promise.all(featureDirs.map((f) => __awaiter(this, void 0, void 0, function* () {
             var _a;
             core.info(`feature ==> ${f}`);
@@ -464,6 +509,21 @@ function getFeaturesAndPackage(basePath, opts) {
                 }
                 metadatas.push(featureMetadata);
                 const sourceInfo = getGitHubMetadata();
+                if (!sourceInfo.owner) {
+                    core.setFailed('Could not determine repository owner.');
+                    return;
+                }
+                const archiveName = `${f}.tgz`;
+                // ---- PUBLISH RELEASE ARTIFACTS (classic method) ----
+                if (shouldPublishReleaseArtifacts || shouldPublishToOCI) {
+                    core.info(`** Tar'ing feature`);
+                    yield tarDirectory(featureFolder, archiveName);
+                }
+                // ---- PUBLISH TO NPM ----
+                if (shouldPublishToOCI) {
+                    core.info(`** Publishing to OCI`);
+                    yield pushArtifactToOCI(sourceInfo.owner, featureMetadata.version, f, archiveName);
+                }
                 // ---- TAG INDIVIDUAL FEATURES ----
                 if (shouldTagIndividualFeatures) {
                     core.info(`** Tagging individual feature`);
@@ -497,12 +557,6 @@ function getFeaturesAndPackage(basePath, opts) {
                     if (publishOutput.stderr) {
                         core.error(`${publishOutput.stderr}`);
                     }
-                }
-                // ---- PUBLISH RELEASE ARTIFACTS (classic method) ----
-                if (shouldPublishReleaseArtifacts) {
-                    core.info(`** Publishing release`);
-                    const archiveName = `${f}.tgz`;
-                    yield tarDirectory(featureFolder, archiveName);
                 }
             }
         })));
