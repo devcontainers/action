@@ -70,7 +70,7 @@ async function run(): Promise<void> {
     // -- Programatically add feature/template metadata to collections file.
 
     core.info('Generating metadata file: devcontainer-collection.json');
-    await addCollectionsMetadataFile(featuresMetadata, templatesMetadata);
+    await addCollectionsMetadataFile(featuresMetadata, templatesMetadata, opts);
 }
 
 async function packageFeatures(basePath: string, opts: PackagingOptions): Promise<Feature[] | undefined> {

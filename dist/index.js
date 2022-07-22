@@ -247,7 +247,7 @@ function run() {
         }
         // -- Programatically add feature/template metadata to collections file.
         core.info('Generating metadata file: devcontainer-collection.json');
-        yield (0, utils_1.addCollectionsMetadataFile)(featuresMetadata, templatesMetadata);
+        yield (0, utils_1.addCollectionsMetadataFile)(featuresMetadata, templatesMetadata, opts);
     });
 }
 function packageFeatures(basePath, opts) {
@@ -328,7 +328,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getTemplatesAndPackage = exports.getFeaturesAndPackage = exports.addCollectionsMetadataFile = exports.tarDirectory = exports.renameLocal = exports.mkdirLocal = exports.writeLocalFile = exports.readLocalFile = void 0;
+exports.getTemplatesAndPackage = exports.getFeaturesAndPackage = exports.pushCollectionsMetadataToOCI = exports.addCollectionsMetadataFile = exports.tarDirectory = exports.renameLocal = exports.mkdirLocal = exports.writeLocalFile = exports.readLocalFile = void 0;
 const github = __importStar(__nccwpck_require__(5438));
 const tar = __importStar(__nccwpck_require__(4674));
 const fs = __importStar(__nccwpck_require__(7147));
@@ -428,7 +428,7 @@ function tagFeatureAtVersion(featureMetaData) {
         }
     });
 }
-function addCollectionsMetadataFile(featuresMetadata, templatesMetadata) {
+function addCollectionsMetadataFile(featuresMetadata, templatesMetadata, opts) {
     return __awaiter(this, void 0, void 0, function* () {
         const p = path_1.default.join('.', 'devcontainer-collection.json');
         const sourceInformation = getGitHubMetadata();
@@ -439,16 +439,19 @@ function addCollectionsMetadataFile(featuresMetadata, templatesMetadata) {
         };
         // Write to the file
         yield (0, exports.writeLocalFile)(p, JSON.stringify(metadata, undefined, 4));
+        if (opts.shouldPublishToOCI) {
+            pushCollectionsMetadataToOCI(p);
+        }
     });
 }
 exports.addCollectionsMetadataFile = addCollectionsMetadataFile;
-function pushArtifactToOCI(repositoryOwner, version, featureName, artifactPath) {
+function pushArtifactToOCI(version, featureName, artifactPath) {
     return __awaiter(this, void 0, void 0, function* () {
         const exec = (0, util_1.promisify)(child_process.exec);
         const versions = [version, '1.0', '1']; // TODO: don't hardcode ofc.
+        const sourceInfo = getGitHubMetadata();
         yield Promise.all(versions.map((v) => __awaiter(this, void 0, void 0, function* () {
-            core.info(`Starting to push artifact (tag ${v}) to OCI...`);
-            const ociRepo = `${repositoryOwner}/${featureName}:${v}`;
+            const ociRepo = `${sourceInfo.owner}/${sourceInfo.repo}/${featureName}:${v}`;
             try {
                 const cmd = `oras push ghcr.io/${ociRepo} \
               --manifest-config /dev/null:application/vnd.devcontainers \
@@ -463,6 +466,25 @@ function pushArtifactToOCI(repositoryOwner, version, featureName, artifactPath) 
         })));
     });
 }
+function pushCollectionsMetadataToOCI(collectionJsonPath) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const exec = (0, util_1.promisify)(child_process.exec);
+        const sourceInfo = getGitHubMetadata();
+        const ociRepo = `${sourceInfo.owner}/${sourceInfo.repo}:latest`;
+        try {
+            const cmd = `oras push ghcr.io/${ociRepo} \
+        --manifest-config /dev/null:application/vnd.devcontainers \
+                        ./${collectionJsonPath}:application/vnd.devcontainers.collection.layer.v1+json`;
+            yield exec(cmd);
+            core.info(`Pushed collection metadata to '${ociRepo}'`);
+        }
+        catch (error) {
+            if (error instanceof Error)
+                core.setFailed(`Failed to push collection metadata '${ociRepo}':  ${error.message}`);
+        }
+    });
+}
+exports.pushCollectionsMetadataToOCI = pushCollectionsMetadataToOCI;
 function loginToGHCR() {
     return __awaiter(this, void 0, void 0, function* () {
         const exec = (0, util_1.promisify)(child_process.exec);
@@ -474,7 +496,7 @@ function loginToGHCR() {
         }
         try {
             yield exec(`oras login ghcr.io -u USERNAME -p ${githubToken}`);
-            console.log('Oras logged in successfully!');
+            core.info('Oras logged in successfully!');
         }
         catch (error) {
             if (error instanceof Error)
@@ -522,7 +544,7 @@ function getFeaturesAndPackage(basePath, opts) {
                 // ---- PUBLISH TO NPM ----
                 if (shouldPublishToOCI) {
                     core.info(`** Publishing to OCI`);
-                    yield pushArtifactToOCI(sourceInfo.owner, featureMetadata.version, f, archiveName);
+                    yield pushArtifactToOCI(featureMetadata.version, f, archiveName);
                 }
                 // ---- TAG INDIVIDUAL FEATURES ----
                 if (shouldTagIndividualFeatures) {

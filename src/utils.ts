@@ -112,7 +112,7 @@ async function tagFeatureAtVersion(featureMetaData: Feature) {
     }
 }
 
-export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | undefined, templatesMetadata: Template[] | undefined) {
+export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | undefined, templatesMetadata: Template[] | undefined, opts: PackagingOptions) {
     const p = path.join('.', 'devcontainer-collection.json');
 
     const sourceInformation = getGitHubMetadata();
@@ -125,20 +125,25 @@ export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | u
 
     // Write to the file
     await writeLocalFile(p, JSON.stringify(metadata, undefined, 4));
+
+    if (opts.shouldPublishToOCI) {
+        pushCollectionsMetadataToOCI(p);
+    }
 }
 
-async function pushArtifactToOCI(repositoryOwner: string, version: string, featureName: string, artifactPath: string): Promise<void> {
+async function pushArtifactToOCI(version: string, featureName: string, artifactPath: string): Promise<void> {
     const exec = promisify(child_process.exec);
 
     const versions = [version, '1.0', '1']; // TODO: don't hardcode ofc.
 
+    const sourceInfo = getGitHubMetadata();
+
     await Promise.all(
         versions.map(async (v: string) => {
-            core.info(`Starting to push artifact (tag ${v}) to OCI...`);
-            const ociRepo = `${repositoryOwner}/${featureName}:${v}`;
+            const ociRepo = `${sourceInfo.owner}/${sourceInfo.repo}/${featureName}:${v}`;
             try {
                 const cmd: string = `oras push ghcr.io/${ociRepo} \
-              --manifest-config /dev/null:application/vnd.devcontainers \
+                    --manifest-config /dev/null:application/vnd.devcontainers \
                                 ./${artifactPath}:application/vnd.devcontainers.layer.v1+tar`;
                 await exec(cmd);
                 core.info(`Pushed artifact to '${ociRepo}'`);
@@ -147,6 +152,22 @@ async function pushArtifactToOCI(repositoryOwner: string, version: string, featu
             }
         })
     );
+}
+
+export async function pushCollectionsMetadataToOCI(collectionJsonPath: string) {
+    const exec = promisify(child_process.exec);
+
+    const sourceInfo = getGitHubMetadata();
+    const ociRepo = `${sourceInfo.owner}/${sourceInfo.repo}:latest`;
+    try {
+        const cmd: string = `oras push ghcr.io/${ociRepo} \
+            --manifest-config /dev/null:application/vnd.devcontainers \
+                        ./${collectionJsonPath}:application/vnd.devcontainers.collection.layer.v1+json`;
+        await exec(cmd);
+        core.info(`Pushed collection metadata to '${ociRepo}'`);
+    } catch (error) {
+        if (error instanceof Error) core.setFailed(`Failed to push collection metadata '${ociRepo}':  ${error.message}`);
+    }
 }
 
 async function loginToGHCR(): Promise<void> {
@@ -161,7 +182,7 @@ async function loginToGHCR(): Promise<void> {
 
     try {
         await exec(`oras login ghcr.io -u USERNAME -p ${githubToken}`);
-        console.log('Oras logged in successfully!');
+        core.info('Oras logged in successfully!');
     } catch (error) {
         if (error instanceof Error) core.setFailed(` Oras login failed!`);
     }
@@ -217,7 +238,9 @@ export async function getFeaturesAndPackage(basePath: string, opts: PackagingOpt
                 if (shouldPublishToOCI) {
                     core.info(`** Publishing to OCI`);
 
-                    await pushArtifactToOCI(sourceInfo.owner, featureMetadata.version, f, archiveName);
+                    // TODO: CHECK IF THE FEATURE IS ALREADY PUBLISHED UNDER GIVEN TAG
+
+                    await pushArtifactToOCI(featureMetadata.version, f, archiveName);
                 }
 
                 // ---- TAG INDIVIDUAL FEATURES ----
