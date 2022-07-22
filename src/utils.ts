@@ -127,8 +127,22 @@ export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | u
     await writeLocalFile(p, JSON.stringify(metadata, undefined, 4));
 }
 
+async function pushArtifactToOCI(repositoryOwner: string, version: string, featureName: string, artifactPath: string): Promise<void> {
+    const exec = promisify(child_process.exec);
+    const ociRepo = `${repositoryOwner}/${featureName}:${version}`;
+    try {
+      const cmd: string = `oras push ghcr.io/${ociRepo} \
+      --manifest-config /dev/null:application/vnd.devcontainers \
+                        ./${artifactPath}:application/vnd.devcontainers.layer.v1+tar`;
+      await exec(cmd);
+      console.log(`Pushed artifact to '${ociRepo}'`)
+    } catch (error) {
+      if (error instanceof Error) core.setFailed(`Failed to push '${ociRepo}':  ${error.message}`);
+    }
+  }
+
 export async function getFeaturesAndPackage(basePath: string, opts: PackagingOptions): Promise<Feature[] | undefined> {
-    const { shouldPublishToNPM, shouldTagIndividualFeatures, shouldPublishReleaseArtifacts } = opts;
+    const { shouldPublishToNPM, shouldTagIndividualFeatures, shouldPublishReleaseArtifacts, shouldPublishToOCI } = opts;
     const featureDirs = fs.readdirSync(basePath);
     let metadatas: Feature[] = [];
     const exec = promisify(child_process.exec);
@@ -157,6 +171,33 @@ export async function getFeaturesAndPackage(basePath: string, opts: PackagingOpt
                 metadatas.push(featureMetadata);
 
                 const sourceInfo = getGitHubMetadata();
+                if (!sourceInfo.owner) {
+                    core.setFailed('Could not determine repository owner.');
+                    return;
+                }
+
+                const archiveName = `${f}.tgz`;
+                // ---- PUBLISH RELEASE ARTIFACTS (classic method) ----
+                if (shouldPublishReleaseArtifacts  || shouldPublishToOCI) {
+                    core.info(`** Publishing release`);
+                    await tarDirectory(featureFolder, archiveName);
+                }
+
+                // ---- PUBLISH TO NPM ----
+                if (shouldPublishToOCI) {
+                    // HACK TO GET THE GITHUB UI TO NOT 500
+
+                    // END HACK
+
+
+                    if (!(await oras.isAvailable())) {
+                        core.setFailed(`Oras is required to generate OCI artifacts.`);
+                        return;
+                      }
+
+                    pushArtifactToOCI(sourceInfo.owner, featureMetadata.version, f, archiveName);
+
+                }
 
                 // ---- TAG INDIVIDUAL FEATURES ----
                 if (shouldTagIndividualFeatures) {
@@ -196,13 +237,6 @@ export async function getFeaturesAndPackage(basePath: string, opts: PackagingOpt
                     if (publishOutput.stderr) {
                         core.error(`${publishOutput.stderr}`);
                     }
-                }
-
-                // ---- PUBLISH RELEASE ARTIFACTS (classic method) ----
-                if (shouldPublishReleaseArtifacts) {
-                    core.info(`** Publishing release`);
-                    const archiveName = `${f}.tgz`;
-                    await tarDirectory(featureFolder, archiveName);
                 }
             }
         })

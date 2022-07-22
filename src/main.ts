@@ -13,6 +13,7 @@ export interface PackagingOptions {
     shouldTagIndividualFeatures: boolean;
     shouldPublishToNPM: boolean;
     shouldPublishReleaseArtifacts: boolean;
+    shouldPublishToOCI: boolean;
 }
 
 async function run(): Promise<void> {
@@ -27,11 +28,13 @@ async function run(): Promise<void> {
     const shouldTagIndividualFeatures = core.getInput('tag-individual-features').toLowerCase() === 'true';
     const shouldPublishToNPM = core.getInput('publish-to-npm').toLowerCase() === 'true';
     const shouldPublishReleaseArtifacts = core.getInput('publish-release-artifacts').toLowerCase() === 'true';
+    const shouldPublishToOCI = core.getInput('publish-to-oci').toLowerCase() === 'true';
 
     const opts: PackagingOptions = {
         shouldTagIndividualFeatures,
         shouldPublishToNPM,
-        shouldPublishReleaseArtifacts
+        shouldPublishReleaseArtifacts,
+        shouldPublishToOCI
     };
 
     const featuresBasePath = core.getInput('base-path-to-features');
@@ -96,7 +99,6 @@ async function packageTemplates(basePath: string): Promise<Template[] | undefine
             core.setFailed(error.message);
         }
     }
-
     return;
 }
 
