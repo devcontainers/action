@@ -454,7 +454,7 @@ function pushArtifactToOCI(version, featureName, artifactPath) {
             const ociRepo = `${sourceInfo.owner}/${sourceInfo.repo}/${featureName}:${v}`;
             try {
                 const cmd = `oras push ghcr.io/${ociRepo} \
-              --manifest-config /dev/null:application/vnd.devcontainers \
+                    --manifest-config /dev/null:application/vnd.devcontainers \
                                 ./${artifactPath}:application/vnd.devcontainers.layer.v1+tar`;
                 yield exec(cmd);
                 core.info(`Pushed artifact to '${ociRepo}'`);
@@ -473,7 +473,7 @@ function pushCollectionsMetadataToOCI(collectionJsonPath) {
         const ociRepo = `${sourceInfo.owner}/${sourceInfo.repo}:latest`;
         try {
             const cmd = `oras push ghcr.io/${ociRepo} \
-        --manifest-config /dev/null:application/vnd.devcontainers \
+            --manifest-config /dev/null:application/vnd.devcontainers \
                         ./${collectionJsonPath}:application/vnd.devcontainers.collection.layer.v1+json`;
             yield exec(cmd);
             core.info(`Pushed collection metadata to '${ociRepo}'`);
@@ -544,6 +544,7 @@ function getFeaturesAndPackage(basePath, opts) {
                 // ---- PUBLISH TO NPM ----
                 if (shouldPublishToOCI) {
                     core.info(`** Publishing to OCI`);
+                    // TODO: CHECK IF THE FEATURE IS ALREADY PUBLISHED UNDER GIVEN TAG
                     yield pushArtifactToOCI(featureMetadata.version, f, archiveName);
                 }
                 // ---- TAG INDIVIDUAL FEATURES ----
