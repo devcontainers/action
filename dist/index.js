@@ -248,6 +248,12 @@ function run() {
         // -- Programatically add feature/template metadata to collections file.
         core.info('Generating metadata file: devcontainer-collection.json');
         yield (0, utils_1.addCollectionsMetadataFile)(featuresMetadata, templatesMetadata, opts);
+        // -- Add to registry URL to search index
+        // TODO: Add to the search index only if the user opts in
+        // if (shouldPublishToMarketPlace) {
+        core.info('Updating search index');
+        yield (0, utils_1.addOCIPathtoSearchIndex)();
+        // }
     });
 }
 function packageFeatures(basePath, opts) {
@@ -328,7 +334,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getTemplatesAndPackage = exports.getFeaturesAndPackage = exports.pushCollectionsMetadataToOCI = exports.addCollectionsMetadataFile = exports.tarDirectory = exports.renameLocal = exports.mkdirLocal = exports.writeLocalFile = exports.readLocalFile = void 0;
+exports.getTemplatesAndPackage = exports.getFeaturesAndPackage = exports.pushCollectionsMetadataToOCI = exports.addOCIPathtoSearchIndex = exports.addCollectionsMetadataFile = exports.tarDirectory = exports.renameLocal = exports.mkdirLocal = exports.writeLocalFile = exports.readLocalFile = void 0;
 const github = __importStar(__nccwpck_require__(5438));
 const tar = __importStar(__nccwpck_require__(4674));
 const fs = __importStar(__nccwpck_require__(7147));
@@ -445,6 +451,59 @@ function addCollectionsMetadataFile(featuresMetadata, templatesMetadata, opts) {
     });
 }
 exports.addCollectionsMetadataFile = addCollectionsMetadataFile;
+function addOCIPathtoSearchIndex() {
+    return __awaiter(this, void 0, void 0, function* () {
+        // Get GIST_TOKEN from environment
+        const gistToken = process.env.GIST_TOKEN;
+        if (!gistToken) {
+            core.setFailed('GIST_TOKEN environment variable is not set.');
+            return;
+        }
+        // TODO: store it in some different place
+        const gist_id = 'b68fe9c2dcbe288754daa2676dc86c8a';
+        const gist_name = 'devcontainer-features.txt';
+        // Setup Octokit client
+        const octokit = github.getOctokit(gistToken);
+        // Use octokit to GET a gist
+        const getGist = yield octokit.rest.gists.get({
+            gist_id
+        });
+        if (getGist.status === 200) {
+            core.info(`Fetched '${gist_name}'`);
+        }
+        else {
+            core.setFailed(`Failed to fetch '${gist_name}'`);
+            return;
+        }
+        if (getGist.data.files !== undefined && getGist.data.files[gist_name]) {
+            const currentGistContents = getGist.data.files[gist_name].content;
+            const sourceInfo = getGitHubMetadata();
+            const ociPath = `ghcr.io/${sourceInfo.owner}/${sourceInfo.repo}`;
+            const updatedGistContents = currentGistContents !== undefined ? currentGistContents + '\n' + ociPath : ociPath;
+            const updateGist = yield octokit.rest.gists.update({
+                gist_id,
+                description: 'Updating devcontainer-features list',
+                files: {
+                    'devcontainer-features.txt': {
+                        content: updatedGistContents
+                    }
+                }
+            });
+            if (updateGist.status === 200) {
+                core.info(`Updated '${gist_name}`);
+            }
+            else {
+                core.setFailed(`Failed to update '${gist_name}'`);
+                return;
+            }
+        }
+        else {
+            core.setFailed(`Failed to update '${gist_name}'`);
+            return;
+        }
+    });
+}
+exports.addOCIPathtoSearchIndex = addOCIPathtoSearchIndex;
 function pushArtifactToOCI(version, featureName, artifactPath) {
     return __awaiter(this, void 0, void 0, function* () {
         const exec = (0, util_1.promisify)(child_process.exec);

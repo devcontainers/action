@@ -7,7 +7,7 @@ import * as core from '@actions/core';
 import { Feature } from './contracts/features';
 import { Template } from './contracts/templates';
 import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
-import { addCollectionsMetadataFile, getFeaturesAndPackage, getTemplatesAndPackage } from './utils';
+import { addCollectionsMetadataFile, addOCIPathtoSearchIndex, getFeaturesAndPackage, getTemplatesAndPackage } from './utils';
 
 export interface PackagingOptions {
     shouldTagIndividualFeatures: boolean;
@@ -71,6 +71,13 @@ async function run(): Promise<void> {
 
     core.info('Generating metadata file: devcontainer-collection.json');
     await addCollectionsMetadataFile(featuresMetadata, templatesMetadata, opts);
+
+    // -- Add to registry URL to search index
+    // TODO: Add to the search index only if the user opts in
+    // if (shouldPublishToMarketPlace) {
+    core.info('Updating search index');
+    await addOCIPathtoSearchIndex();
+    // }
 }
 
 async function packageFeatures(basePath: string, opts: PackagingOptions): Promise<Feature[] | undefined> {

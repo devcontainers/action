@@ -131,6 +131,62 @@ export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | u
     }
 }
 
+export async function addOCIPathtoSearchIndex() {    
+    // Get GIST_TOKEN from environment
+    const gistToken = process.env.GIST_TOKEN;
+    if (!gistToken) {
+        core.setFailed('GIST_TOKEN environment variable is not set.');
+        return;
+    }
+
+    // TODO: store it in some different place
+    const gist_id = 'b68fe9c2dcbe288754daa2676dc86c8a';
+    const gist_name = 'devcontainer-features.txt';
+
+    // Setup Octokit client
+    const octokit = github.getOctokit(gistToken);
+
+    // Use octokit to GET a gist
+    const getGist = await octokit.rest.gists.get({
+        gist_id
+    });
+
+    if (getGist.status === 200) {
+        core.info(`Fetched '${gist_name}'`);
+    } else {
+        core.setFailed(`Failed to fetch '${gist_name}'`);
+        return;
+    }
+
+    if (getGist.data.files !== undefined && getGist.data.files[gist_name]) {
+        const currentGistContents = getGist.data.files[gist_name].content;
+
+        const sourceInfo = getGitHubMetadata();
+        const ociPath = `ghcr.io/${sourceInfo.owner}/${sourceInfo.repo}`;
+        const updatedGistContents = currentGistContents !== undefined ? currentGistContents +'\n' +ociPath : ociPath;
+
+        const updateGist = await octokit.rest.gists.update({
+            gist_id,
+            description: 'Updating devcontainer-features list',
+            files: {
+                'devcontainer-features.txt': {
+                    content: updatedGistContents
+                }
+            }
+        });
+
+        if (updateGist.status === 200) {
+            core.info(`Updated '${gist_name}`);
+        } else {
+            core.setFailed(`Failed to update '${gist_name}'`);
+            return;
+        }
+    } else {
+        core.setFailed(`Failed to update '${gist_name}'`);
+        return;
+    }
+}
+
 async function pushArtifactToOCI(version: string, featureName: string, artifactPath: string): Promise<void> {
     const exec = promisify(child_process.exec);
 
