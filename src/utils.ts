@@ -163,24 +163,30 @@ export async function addOCIPathtoSearchIndex() {
 
         const sourceInfo = getGitHubMetadata();
         const ociPath = `ghcr.io/${sourceInfo.owner}/${sourceInfo.repo}`;
-        const updatedGistContents = currentGistContents !== undefined ? currentGistContents +'\n' +ociPath : ociPath;
 
-        const updateGist = await octokit.rest.gists.update({
-            gist_id,
-            description: 'Updating devcontainer-features list',
-            files: {
-                'devcontainer-features.txt': {
-                    content: updatedGistContents
+        if (!currentGistContents?.includes(ociPath)){
+            const updatedGistContents = currentGistContents !== undefined ? currentGistContents +'\n' +ociPath : ociPath;
+
+            const updateGist = await octokit.rest.gists.update({
+                gist_id,
+                description: 'Updating devcontainer-features list',
+                files: {
+                    'devcontainer-features.txt': {
+                        content: updatedGistContents
+                    }
                 }
+            });
+    
+            if (updateGist.status === 200) {
+                core.info(`Updated '${gist_name}'`);
+            } else {
+                core.setFailed(`Failed to update '${gist_name}'`);
+                return;
             }
-        });
-
-        if (updateGist.status === 200) {
-            core.info(`Updated '${gist_name}`);
         } else {
-            core.setFailed(`Failed to update '${gist_name}'`);
-            return;
+            core.info(`'${gist_name}' already contains ${ociPath}`);
         }
+
     } else {
         core.setFailed(`Failed to update '${gist_name}'`);
         return;

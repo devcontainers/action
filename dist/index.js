@@ -217,6 +217,7 @@ function run() {
         const shouldPublishToNPM = core.getInput('publish-to-npm').toLowerCase() === 'true';
         const shouldPublishReleaseArtifacts = core.getInput('publish-release-artifacts').toLowerCase() === 'true';
         const shouldPublishToOCI = core.getInput('publish-to-oci').toLowerCase() === 'true';
+        const shouldAddToSearchIndex = core.getInput('add-to-search-index').toLowerCase() === 'true';
         const opts = {
             shouldTagIndividualFeatures,
             shouldPublishToNPM,
@@ -249,11 +250,10 @@ function run() {
         core.info('Generating metadata file: devcontainer-collection.json');
         yield (0, utils_1.addCollectionsMetadataFile)(featuresMetadata, templatesMetadata, opts);
         // -- Add to registry URL to search index
-        // TODO: Add to the search index only if the user opts in
-        // if (shouldPublishToMarketPlace) {
-        core.info('Updating search index');
-        yield (0, utils_1.addOCIPathtoSearchIndex)();
-        // }
+        if (shouldAddToSearchIndex) {
+            core.info('Updating search index');
+            yield (0, utils_1.addOCIPathtoSearchIndex)();
+        }
     });
 }
 function packageFeatures(basePath, opts) {
@@ -479,22 +479,27 @@ function addOCIPathtoSearchIndex() {
             const currentGistContents = getGist.data.files[gist_name].content;
             const sourceInfo = getGitHubMetadata();
             const ociPath = `ghcr.io/${sourceInfo.owner}/${sourceInfo.repo}`;
-            const updatedGistContents = currentGistContents !== undefined ? currentGistContents + '\n' + ociPath : ociPath;
-            const updateGist = yield octokit.rest.gists.update({
-                gist_id,
-                description: 'Updating devcontainer-features list',
-                files: {
-                    'devcontainer-features.txt': {
-                        content: updatedGistContents
+            if (!(currentGistContents === null || currentGistContents === void 0 ? void 0 : currentGistContents.includes(ociPath))) {
+                const updatedGistContents = currentGistContents !== undefined ? currentGistContents + '\n' + ociPath : ociPath;
+                const updateGist = yield octokit.rest.gists.update({
+                    gist_id,
+                    description: 'Updating devcontainer-features list',
+                    files: {
+                        'devcontainer-features.txt': {
+                            content: updatedGistContents
+                        }
                     }
+                });
+                if (updateGist.status === 200) {
+                    core.info(`Updated '${gist_name}'`);
                 }
-            });
-            if (updateGist.status === 200) {
-                core.info(`Updated '${gist_name}`);
+                else {
+                    core.setFailed(`Failed to update '${gist_name}'`);
+                    return;
+                }
             }
             else {
-                core.setFailed(`Failed to update '${gist_name}'`);
-                return;
+                core.info(`'${gist_name}' already contains ${ociPath}`);
             }
         }
         else {

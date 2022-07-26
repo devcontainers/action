@@ -48,6 +48,10 @@ inputs:
     required: false
     default: "false"
     description: "Publish to OCI?"
+  add-to-search-index:
+    required: false
+    default: "false"
+    description: "['true'/'false'] Publish dev container 'features' to a global search index"
 
 runs:
   using: 'node16'

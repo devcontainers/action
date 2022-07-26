@@ -29,6 +29,7 @@ async function run(): Promise<void> {
     const shouldPublishToNPM = core.getInput('publish-to-npm').toLowerCase() === 'true';
     const shouldPublishReleaseArtifacts = core.getInput('publish-release-artifacts').toLowerCase() === 'true';
     const shouldPublishToOCI = core.getInput('publish-to-oci').toLowerCase() === 'true';
+    const shouldAddToSearchIndex = core.getInput('add-to-search-index').toLowerCase() === 'true';
 
     const opts: PackagingOptions = {
         shouldTagIndividualFeatures,
@@ -73,11 +74,10 @@ async function run(): Promise<void> {
     await addCollectionsMetadataFile(featuresMetadata, templatesMetadata, opts);
 
     // -- Add to registry URL to search index
-    // TODO: Add to the search index only if the user opts in
-    // if (shouldPublishToMarketPlace) {
-    core.info('Updating search index');
-    await addOCIPathtoSearchIndex();
-    // }
+    if (shouldAddToSearchIndex) {
+        core.info('Updating search index');
+        await addOCIPathtoSearchIndex();
+    }
 }
 
 async function packageFeatures(basePath: string, opts: PackagingOptions): Promise<Feature[] | undefined> {
