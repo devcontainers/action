@@ -30,9 +30,10 @@ export async function tarDirectory(path: string, tgzName: string) {
     });
 }
 
-function getGitHubMetadata() {
+export function getGitHubMetadata() {
     // Insert github repo metadata
     const ref = github.context.ref;
+
     let sourceInformation: GitHubMetadata = {
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
