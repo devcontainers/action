@@ -40,6 +40,9 @@ async function run(): Promise<void> {
     const featuresBasePath = core.getInput('base-path-to-features');
     const templatesBasePath = core.getInput('base-path-to-templates');
 
+    const ociRegistry = core.getInput('oci-registry');
+    const namespace = core.getInput('features-namespace');
+
     let featuresMetadata: Feature[] | undefined = undefined;
     let templatesMetadata: Template[] | undefined = undefined;
 
@@ -59,7 +62,7 @@ async function run(): Promise<void> {
 
     if (shouldGenerateDocumentation && featuresBasePath) {
         core.info('Generating documentation for features...');
-        await generateFeaturesDocumentation(featuresBasePath);
+        await generateFeaturesDocumentation(featuresBasePath, ociRegistry, namespace);
     }
 
     if (shouldGenerateDocumentation && templatesBasePath) {

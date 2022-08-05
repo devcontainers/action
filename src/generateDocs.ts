@@ -2,7 +2,6 @@ import * as fs from 'fs';
 import * as github from '@actions/github';
 import * as core from '@actions/core';
 import * as path from 'path';
-import { Feature } from './contracts/features';
 
 const FEATURES_README_TEMPLATE = `
 # #{Name}
@@ -13,7 +12,7 @@ const FEATURES_README_TEMPLATE = `
 
 \`\`\`json
 "features": {
-        "#{Nwo}/#{Id}@#{VersionTag}": {
+        "#{Registry}/#{Namespace}/#{Id}:#{Version}": {
             "version": "latest"
         }
 }
@@ -38,15 +37,15 @@ const TEMPLATE_README_TEMPLATE = `
 #{OptionsTable}
 `;
 
-export async function generateFeaturesDocumentation(basePath: string) {
-    await _generateDocumentation(basePath, FEATURES_README_TEMPLATE, 'devcontainer-feature.json');
+export async function generateFeaturesDocumentation(basePath: string, ociRegistry: string, namespace: string) {
+    await _generateDocumentation(basePath, FEATURES_README_TEMPLATE, 'devcontainer-feature.json', ociRegistry, namespace);
 }
 
 export async function generateTemplateDocumentation(basePath: string) {
     await _generateDocumentation(basePath, TEMPLATE_README_TEMPLATE, 'devcontainer-template.json');
 }
 
-async function _generateDocumentation(basePath: string, readmeTemplate: string, metadataFile: string) {
+async function _generateDocumentation(basePath: string, readmeTemplate: string, metadataFile: string, ociRegistry: string = '', namespace: string = '') {
     const directories = fs.readdirSync(basePath);
 
     await Promise.all(
@@ -75,14 +74,16 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     return;
                 }
 
-                const ref = github.context.ref;
                 const owner = github.context.repo.owner;
                 const repo = github.context.repo.repo;
 
-                // Add tag if parseable
-                let versionTag = 'latest';
-                if (ref.includes('refs/tags/')) {
-                    versionTag = ref.replace('refs/tags/', '');
+                // Add version
+                let version = 'latest';
+                const parsedVersion: string = parsedJson?.version;
+                if (parsedVersion) {
+                    // example - 1.0.0
+                    const splitVersion = parsedVersion.split('.');
+                    version = splitVersion[0];
                 }
 
                 const generateOptionsMarkdown = () => {
@@ -109,8 +110,9 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     .replace('#{Description}', parsedJson.description ?? '')
                     .replace('#{OptionsTable}', generateOptionsMarkdown())
                     // Features Only
-                    .replace('#{Nwo}', `${owner}/${repo}`)
-                    .replace('#{VersionTag}', versionTag)
+                    .replace('#{Registry}', ociRegistry)
+                    .replace('#{Namespace}', namespace == '<owner>/<repo>' ? `${owner}/${repo}` : namespace)
+                    .replace('#{Version}', version)
                     // Templates Only
                     .replace('#{ManifestName}', parsedJson?.image?.manifest ?? '');
 
