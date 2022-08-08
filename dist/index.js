@@ -548,7 +548,7 @@ function getFeaturesAndPackage(basePath, opts) {
                     core.setFailed('Could not determine repository owner.');
                     return;
                 }
-                const archiveName = `${f}.tgz`;
+                const archiveName = `devcontainer-feature-${f}.tgz`;
                 // ---- PUBLISH RELEASE ARTIFACTS (classic method) ----
                 if (shouldPublishReleaseArtifacts || shouldPublishToOCI) {
                     core.info(`** Tar'ing feature`);
