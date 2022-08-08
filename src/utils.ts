@@ -228,7 +228,7 @@ export async function getFeaturesAndPackage(basePath: string, opts: PackagingOpt
                     return;
                 }
 
-                const archiveName = `${f}.tgz`;
+                const archiveName = `devcontainer-feature-${f}.tgz`;
                 // ---- PUBLISH RELEASE ARTIFACTS (classic method) ----
                 if (shouldPublishReleaseArtifacts || shouldPublishToOCI) {
                     core.info(`** Tar'ing feature`);
