@@ -458,6 +458,25 @@ function addCollectionsMetadataFile(featuresMetadata, templatesMetadata, opts) {
     });
 }
 exports.addCollectionsMetadataFile = addCollectionsMetadataFile;
+function generateAnnotationFiles() {
+    return __awaiter(this, void 0, void 0, function* () {
+        const featureAnnotationsPath = path_1.default.join('.', 'feature-annotations.json');
+        const colelctionAnnotationsPath = path_1.default.join('.', 'collection-annotations.json');
+        const featureAnnotations = {
+            $manifest: {
+                'com.github.package.type': 'devcontainer_feature'
+            }
+        };
+        const collectionAnnotations = {
+            $manifest: {
+                'com.github.package.type': 'devcontainer_collection'
+            }
+        };
+        // TODO: Can add 'org.opencontainers.image.source', etc...
+        yield (0, exports.writeLocalFile)(featureAnnotationsPath, JSON.stringify(featureAnnotations));
+        yield (0, exports.writeLocalFile)(colelctionAnnotationsPath, JSON.stringify(collectionAnnotations));
+    });
+}
 function pushArtifactToOCI(version, featureName, artifactPath) {
     return __awaiter(this, void 0, void 0, function* () {
         const exec = (0, util_1.promisify)(child_process.exec);
@@ -468,7 +487,8 @@ function pushArtifactToOCI(version, featureName, artifactPath) {
             try {
                 const cmd = `oras push ghcr.io/${ociRepo} \
                     --manifest-config /dev/null:application/vnd.devcontainers \
-                                ./${artifactPath}:application/vnd.devcontainers.layer.v1+tar`;
+                                ./${artifactPath}:application/vnd.devcontainers.layer.v1+tar \
+                    --manifest-annotations feature-annotations.json`;
                 yield exec(cmd);
                 core.info(`Pushed artifact to '${ociRepo}'`);
             }
@@ -487,7 +507,8 @@ function pushCollectionsMetadataToOCI(collectionJsonPath) {
         try {
             const cmd = `oras push ghcr.io/${ociRepo} \
             --manifest-config /dev/null:application/vnd.devcontainers \
-                        ./${collectionJsonPath}:application/vnd.devcontainers.collection.layer.v1+json`;
+                        ./${collectionJsonPath}:application/vnd.devcontainers.collection.layer.v1+json \
+            --manifest-annotations collection-annotations.json`;
             yield exec(cmd);
             core.info(`Pushed collection metadata to '${ociRepo}'`);
         }
@@ -558,6 +579,8 @@ function getFeaturesAndPackage(basePath, opts) {
                 if (shouldPublishToOCI) {
                     core.info(`** Publishing to OCI`);
                     // TODO: CHECK IF THE FEATURE IS ALREADY PUBLISHED UNDER GIVEN TAG
+                    // Generate annotation files.
+                    yield generateAnnotationFiles();
                     yield pushArtifactToOCI(featureMetadata.version, f, archiveName);
                 }
                 // ---- TAG INDIVIDUAL FEATURES ----

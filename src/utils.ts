@@ -132,6 +132,28 @@ export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | u
     }
 }
 
+async function generateAnnotationFiles() {
+    const featureAnnotationsPath = path.join('.', 'feature-annotations.json');
+    const colelctionAnnotationsPath = path.join('.', 'collection-annotations.json');
+
+    const featureAnnotations = {
+        $manifest: {
+            'com.github.package.type': 'devcontainer_feature'
+        }
+    };
+
+    const collectionAnnotations = {
+        $manifest: {
+            'com.github.package.type': 'devcontainer_collection'
+        }
+    };
+
+    // TODO: Can add 'org.opencontainers.image.source', etc...
+
+    await writeLocalFile(featureAnnotationsPath, JSON.stringify(featureAnnotations));
+    await writeLocalFile(colelctionAnnotationsPath, JSON.stringify(collectionAnnotations));
+}
+
 async function pushArtifactToOCI(version: string, featureName: string, artifactPath: string): Promise<void> {
     const exec = promisify(child_process.exec);
 
@@ -145,7 +167,8 @@ async function pushArtifactToOCI(version: string, featureName: string, artifactP
             try {
                 const cmd: string = `oras push ghcr.io/${ociRepo} \
                     --manifest-config /dev/null:application/vnd.devcontainers \
-                                ./${artifactPath}:application/vnd.devcontainers.layer.v1+tar`;
+                                ./${artifactPath}:application/vnd.devcontainers.layer.v1+tar \
+                    --manifest-annotations feature-annotations.json`;
                 await exec(cmd);
                 core.info(`Pushed artifact to '${ociRepo}'`);
             } catch (error) {
@@ -163,7 +186,8 @@ export async function pushCollectionsMetadataToOCI(collectionJsonPath: string) {
     try {
         const cmd: string = `oras push ghcr.io/${ociRepo} \
             --manifest-config /dev/null:application/vnd.devcontainers \
-                        ./${collectionJsonPath}:application/vnd.devcontainers.collection.layer.v1+json`;
+                        ./${collectionJsonPath}:application/vnd.devcontainers.collection.layer.v1+json \
+            --manifest-annotations collection-annotations.json`;
         await exec(cmd);
         core.info(`Pushed collection metadata to '${ociRepo}'`);
     } catch (error) {
@@ -240,6 +264,9 @@ export async function getFeaturesAndPackage(basePath: string, opts: PackagingOpt
                     core.info(`** Publishing to OCI`);
 
                     // TODO: CHECK IF THE FEATURE IS ALREADY PUBLISHED UNDER GIVEN TAG
+
+                    // Generate annotation files.
+                    await generateAnnotationFiles();
 
                     await pushArtifactToOCI(featureMetadata.version, f, archiveName);
                 }
