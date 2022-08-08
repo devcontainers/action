@@ -384,7 +384,7 @@ function getFeaturesAndPackage(basePath) {
             core.info(`feature ==> ${f}`);
             if (!f.startsWith('.')) {
                 const featureFolder = path_1.default.join(basePath, f);
-                const archiveName = `${f}.tgz`;
+                const archiveName = `devcontainer-feature-${f}.tgz`;
                 yield tarDirectory(featureFolder, archiveName);
                 const featureJsonPath = path_1.default.join(featureFolder, 'devcontainer-feature.json');
                 if (!fs.existsSync(featureJsonPath)) {
