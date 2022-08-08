@@ -66,7 +66,7 @@ export async function getFeaturesAndPackage(basePath: string): Promise<Feature[]
             core.info(`feature ==> ${f}`);
             if (!f.startsWith('.')) {
                 const featureFolder = path.join(basePath, f);
-                const archiveName = `${f}.tgz`;
+                const archiveName = `devcontainer-feature-${f}.tgz`;
 
                 await tarDirectory(featureFolder, archiveName);
 
