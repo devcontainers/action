@@ -135,7 +135,7 @@ export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | u
 async function pushArtifactToOCI(version: string, featureName: string, artifactPath: string): Promise<void> {
     const exec = promisify(child_process.exec);
 
-    const versions = [version, '1.0', '1']; // TODO: don't hardcode ofc.
+    const versions = [version, '1.0', '1', 'latest']; // TODO: Generate semantic versions from 'version'
 
     const sourceInfo = getGitHubMetadata();
 

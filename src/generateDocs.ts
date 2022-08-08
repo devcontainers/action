@@ -12,7 +12,7 @@ const FEATURES_README_TEMPLATE = `
 
 \`\`\`json
 "features": {
-        "#{Nwo}/#{Id}@#{VersionTag}": {
+        "#{Registry}/#{Namespace}/#{Id}:#{Version}": {
             "version": "latest"
         }
 }
@@ -37,15 +37,15 @@ const TEMPLATE_README_TEMPLATE = `
 #{OptionsTable}
 `;
 
-export async function generateFeaturesDocumentation(basePath: string) {
-    await _generateDocumentation(basePath, FEATURES_README_TEMPLATE, 'devcontainer-feature.json');
+export async function generateFeaturesDocumentation(basePath: string, ociRegistry: string, namespace: string) {
+    await _generateDocumentation(basePath, FEATURES_README_TEMPLATE, 'devcontainer-feature.json', ociRegistry, namespace);
 }
 
 export async function generateTemplateDocumentation(basePath: string) {
     await _generateDocumentation(basePath, TEMPLATE_README_TEMPLATE, 'devcontainer-template.json');
 }
 
-async function _generateDocumentation(basePath: string, readmeTemplate: string, metadataFile: string) {
+async function _generateDocumentation(basePath: string, readmeTemplate: string, metadataFile: string, ociRegistry: string = '', namespace: string = '') {
     const directories = fs.readdirSync(basePath);
 
     await Promise.all(
@@ -76,14 +76,16 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
 
                 const srcInfo = getGitHubMetadata();
 
-                const ref = srcInfo.ref;
                 const owner = srcInfo.owner;
                 const repo = srcInfo.repo;
 
-                // Add tag if parseable
-                let versionTag = 'latest';
-                if (ref && ref.includes('refs/tags/')) {
-                    versionTag = ref.replace('refs/tags/', '');
+                // Add version
+                let version = 'latest';
+                const parsedVersion: string = parsedJson?.version;
+                if (parsedVersion) {
+                    // example - 1.0.0
+                    const splitVersion = parsedVersion.split('.');
+                    version = splitVersion[0];
                 }
 
                 const generateOptionsMarkdown = () => {
@@ -116,8 +118,9 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     .replace('#{Description}', parsedJson.description ?? '')
                     .replace('#{OptionsTable}', generateOptionsMarkdown())
                     // Features Only
-                    .replace('#{Nwo}', `${owner}/${repo}`)
-                    .replace('#{VersionTag}', versionTag)
+                    .replace('#{Registry}', ociRegistry)
+                    .replace('#{Namespace}', namespace == '<owner>/<repo>' ? `${owner}/${repo}` : namespace)
+                    .replace('#{Version}', version)
                     // Templates Only
                     .replace('#{ManifestName}', parsedJson?.image?.manifest ?? '')
                     .replace('#{RepoUrl}', urlToConfig);
