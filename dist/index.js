@@ -41,9 +41,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.generateTemplateDocumentation = exports.generateFeaturesDocumentation = void 0;
 const fs = __importStar(__nccwpck_require__(7147));
-const github = __importStar(__nccwpck_require__(5438));
 const core = __importStar(__nccwpck_require__(2186));
 const path = __importStar(__nccwpck_require__(1017));
+const utils_1 = __nccwpck_require__(918);
 const FEATURES_README_TEMPLATE = `
 # #{Name}
 
@@ -63,9 +63,11 @@ const FEATURES_README_TEMPLATE = `
 
 #{OptionsTable}
 
+#{Notes}
+
 ---
 
-_Note: This file was auto-generated from the [devcontainer-feature.json](./devcontainer-feature.json)._
+_Note: This file was auto-generated from the [devcontainer-feature.json](#{RepoUrl}).  Add additional notes to a \`NOTES.md\`._
 `;
 const TEMPLATE_README_TEMPLATE = `
 # #{Name}
@@ -113,8 +115,10 @@ function _generateDocumentation(basePath, readmeTemplate, metadataFile, ociRegis
                     core.error(`${metadataFile} for '${f}' does not contain an 'id'`);
                     return;
                 }
-                const owner = github.context.repo.owner;
-                const repo = github.context.repo.repo;
+                const srcInfo = (0, utils_1.getGitHubMetadata)();
+                const ref = srcInfo.ref;
+                const owner = srcInfo.owner;
+                const repo = srcInfo.repo;
                 // Add version
                 let version = 'latest';
                 const parsedVersion = parsedJson === null || parsedJson === void 0 ? void 0 : parsedJson.version;
@@ -137,18 +141,29 @@ function _generateDocumentation(basePath, readmeTemplate, metadataFile, ociRegis
                         .join('\n');
                     return '| Options Id | Description | Type | Default Value |\n' + '|-----|-----|-----|-----|\n' + contents;
                 };
+                const generateNotesMarkdown = () => {
+                    const notesPath = path.join(basePath, f, 'NOTES.md');
+                    return fs.existsSync(notesPath) ? fs.readFileSync(path.join(notesPath), 'utf8') : '';
+                };
+                let urlToConfig = './devcontainer-feature.json';
+                const basePathTrimmed = basePath.startsWith('./') ? basePath.substring(2) : basePath;
+                if (srcInfo.owner && srcInfo.repo) {
+                    urlToConfig = `https://github.com/${srcInfo.owner}/${srcInfo.repo}/blob/main/${basePathTrimmed}/${f}/devcontainer-feature.json`;
+                }
                 const newReadme = readmeTemplate
                     // Templates & Features
                     .replace('#{Id}', parsedJson.id)
                     .replace('#{Name}', parsedJson.name ? `${parsedJson.name} (${parsedJson.id})` : `${parsedJson.id}`)
                     .replace('#{Description}', (_a = parsedJson.description) !== null && _a !== void 0 ? _a : '')
                     .replace('#{OptionsTable}', generateOptionsMarkdown())
+                    .replace('#{Notes}', generateNotesMarkdown())
                     // Features Only
                     .replace('#{Registry}', ociRegistry)
                     .replace('#{Namespace}', namespace == '<owner>/<repo>' ? `${owner}/${repo}` : namespace)
                     .replace('#{Version}', version)
                     // Templates Only
-                    .replace('#{ManifestName}', (_c = (_b = parsedJson === null || parsedJson === void 0 ? void 0 : parsedJson.image) === null || _b === void 0 ? void 0 : _b.manifest) !== null && _c !== void 0 ? _c : '');
+                    .replace('#{ManifestName}', (_c = (_b = parsedJson === null || parsedJson === void 0 ? void 0 : parsedJson.image) === null || _b === void 0 ? void 0 : _b.manifest) !== null && _c !== void 0 ? _c : '')
+                    .replace('#{RepoUrl}', urlToConfig);
                 // Remove previous readme
                 if (fs.existsSync(readmePath)) {
                     fs.unlinkSync(readmePath);
@@ -322,7 +337,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getTemplatesAndPackage = exports.getFeaturesAndPackage = exports.addCollectionsMetadataFile = exports.tarDirectory = exports.renameLocal = exports.mkdirLocal = exports.writeLocalFile = exports.readLocalFile = void 0;
+exports.getTemplatesAndPackage = exports.getFeaturesAndPackage = exports.addCollectionsMetadataFile = exports.getGitHubMetadata = exports.tarDirectory = exports.renameLocal = exports.mkdirLocal = exports.writeLocalFile = exports.readLocalFile = void 0;
 const github = __importStar(__nccwpck_require__(5438));
 const tar = __importStar(__nccwpck_require__(4674));
 const fs = __importStar(__nccwpck_require__(7147));
@@ -349,13 +364,29 @@ function tarDirectory(path, tgzName) {
     });
 }
 exports.tarDirectory = tarDirectory;
+function getGitHubMetadata() {
+    // Insert github repo metadata
+    const ref = github.context.ref;
+    let sourceInformation = {
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        ref,
+        sha: github.context.sha
+    };
+    // Add tag if parseable
+    if (ref.includes('refs/tags/')) {
+        const tag = ref.replace('refs/tags/', '');
+        sourceInformation = Object.assign(Object.assign({}, sourceInformation), { tag });
+    }
+    return sourceInformation;
+}
+exports.getGitHubMetadata = getGitHubMetadata;
 function addCollectionsMetadataFile(featuresMetadata, templatesMetadata) {
     return __awaiter(this, void 0, void 0, function* () {
         const p = path_1.default.join('.', 'devcontainer-collection.json');
         // Insert github repo metadata
         const ref = github.context.ref;
         let sourceInformation = {
-            source: 'github',
             owner: github.context.repo.owner,
             repo: github.context.repo.repo,
             ref,
