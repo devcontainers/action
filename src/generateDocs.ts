@@ -1,7 +1,7 @@
 import * as fs from 'fs';
-import * as github from '@actions/github';
 import * as core from '@actions/core';
 import * as path from 'path';
+import { getGitHubMetadata } from './utils';
 
 const FEATURES_README_TEMPLATE = `
 # #{Name}
@@ -22,9 +22,11 @@ const FEATURES_README_TEMPLATE = `
 
 #{OptionsTable}
 
+#{Notes}
+
 ---
 
-_Note: This file was auto-generated from the [devcontainer-feature.json](./devcontainer-feature.json)._
+_Note: This file was auto-generated from the [devcontainer-feature.json](#{RepoUrl})._
 `;
 
 const TEMPLATE_README_TEMPLATE = `
@@ -74,8 +76,11 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     return;
                 }
 
-                const owner = github.context.repo.owner;
-                const repo = github.context.repo.repo;
+                const srcInfo = getGitHubMetadata();
+
+                const ref = srcInfo.ref;
+                const owner = srcInfo.owner;
+                const repo = srcInfo.repo;
 
                 // Add version
                 let version = 'latest';
@@ -103,18 +108,31 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     return '| Options Id | Description | Type | Default Value |\n' + '|-----|-----|-----|-----|\n' + contents;
                 };
 
+                const generateNotesMarkdown = () => {
+                    const notesPath = path.join(basePath, f, 'NOTES.md');
+                    return fs.existsSync(notesPath) ? fs.readFileSync(path.join(notesPath), 'utf8') : '';
+                };
+
+                let urlToConfig = './devcontainer-feature.json';
+                const basePathTrimmed = basePath.startsWith('./') ? basePath.substring(2) : basePath;
+                if (srcInfo.owner && srcInfo.repo) {
+                    urlToConfig = `https://github.com/${srcInfo.owner}/${srcInfo.repo}/blob/main/${basePathTrimmed}/${f}/devcontainer-feature.json`;
+                }
+
                 const newReadme = readmeTemplate
                     // Templates & Features
                     .replace('#{Id}', parsedJson.id)
                     .replace('#{Name}', parsedJson.name ? `${parsedJson.name} (${parsedJson.id})` : `${parsedJson.id}`)
                     .replace('#{Description}', parsedJson.description ?? '')
                     .replace('#{OptionsTable}', generateOptionsMarkdown())
+                    .replace('#{Notes}', generateNotesMarkdown())
                     // Features Only
                     .replace('#{Registry}', ociRegistry)
                     .replace('#{Namespace}', namespace == '<owner>/<repo>' ? `${owner}/${repo}` : namespace)
                     .replace('#{Version}', version)
                     // Templates Only
-                    .replace('#{ManifestName}', parsedJson?.image?.manifest ?? '');
+                    .replace('#{ManifestName}', parsedJson?.image?.manifest ?? '')
+                    .replace('#{RepoUrl}', urlToConfig);
 
                 // Remove previous readme
                 if (fs.existsSync(readmePath)) {

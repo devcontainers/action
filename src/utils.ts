@@ -4,7 +4,7 @@ import * as fs from 'fs';
 import * as core from '@actions/core';
 import { promisify } from 'util';
 import path from 'path';
-import { DevContainerCollectionMetadata, SourceInformation } from './contracts/collection';
+import { DevContainerCollectionMetadata, GitHubMetadata } from './contracts/collection';
 import { Feature } from './contracts/features';
 import { Template } from './contracts/templates';
 
@@ -28,13 +28,32 @@ export async function tarDirectory(path: string, tgzName: string) {
     });
 }
 
+export function getGitHubMetadata() {
+    // Insert github repo metadata
+    const ref = github.context.ref;
+
+    let sourceInformation: GitHubMetadata = {
+        owner: github.context.repo.owner,
+        repo: github.context.repo.repo,
+        ref,
+        sha: github.context.sha
+    };
+
+    // Add tag if parseable
+    if (ref.includes('refs/tags/')) {
+        const tag = ref.replace('refs/tags/', '');
+        sourceInformation = { ...sourceInformation, tag };
+    }
+
+    return sourceInformation;
+}
+
 export async function addCollectionsMetadataFile(featuresMetadata: Feature[] | undefined, templatesMetadata: Template[] | undefined) {
     const p = path.join('.', 'devcontainer-collection.json');
 
     // Insert github repo metadata
     const ref = github.context.ref;
-    let sourceInformation: SourceInformation = {
-        source: 'github',
+    let sourceInformation: GitHubMetadata = {
         owner: github.context.repo.owner,
         repo: github.context.repo.repo,
         ref,
