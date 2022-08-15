@@ -26,7 +26,7 @@ const FEATURES_README_TEMPLATE = `
 
 ---
 
-_Note: This file was auto-generated from the [devcontainer-feature.json](#{RepoUrl})._
+_Note: This file was auto-generated from the [devcontainer-feature.json](#{RepoUrl}).  Add additional notes to a \`NOTES.md\`._
 `;
 
 const TEMPLATE_README_TEMPLATE = `
