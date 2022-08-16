@@ -53,7 +53,8 @@ async function publishFeatures(basePath: string): Promise<boolean> {
             ignoreReturnCode: true
         });
         return res.exitCode === 0;
-    } catch (err) {
+    } catch (err: any) {
+        core.setFailed(err?.message);
         return false;
     }
 }
