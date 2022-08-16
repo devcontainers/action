@@ -78,7 +78,6 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
 
                 const srcInfo = getGitHubMetadata();
 
-                const ref = srcInfo.ref;
                 const owner = srcInfo.owner;
                 const repo = srcInfo.repo;
 
@@ -128,7 +127,7 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     .replace('#{Notes}', generateNotesMarkdown())
                     // Features Only
                     .replace('#{Registry}', ociRegistry)
-                    .replace('#{Namespace}', namespace == '<owner>/<repo>' ? `${owner}/${repo}` : namespace)
+                    .replace('#{Namespace}', namespace)
                     .replace('#{Version}', version)
                     // Templates Only
                     .replace('#{ManifestName}', parsedJson?.image?.manifest ?? '')

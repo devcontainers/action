@@ -17,14 +17,21 @@ async function run(): Promise<void> {
 
     const featuresBasePath = core.getInput('base-path-to-features');
 
-    const ociRegistry = core.getInput('oci-registry');
-    const namespace = core.getInput('features-namespace');
+    const sourceMetadata = getGitHubMetadata();
+
+    const inputOciRegistry = core.getInput('oci-registry');
+    const ociRegistry = inputOciRegistry && inputOciRegistry !== '' ? inputOciRegistry : 'ghcr.io';
+
+    const inputNamespace = core.getInput('namespace');
+    const namespace = inputNamespace && inputNamespace !== '' ? inputNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
 
     const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
 
+    // -- Publish
+
     if (shouldPublishFeatures) {
         core.info('Publishing features...');
-        await publishFeatures(featuresBasePath, cliDebugMode);
+        await publishFeatures(featuresBasePath, ociRegistry, namespace, cliDebugMode);
     }
 
     // -- Generate Documentation
@@ -35,18 +42,16 @@ async function run(): Promise<void> {
     }
 }
 
-async function publishFeatures(basePath: string, cliDebugMode = false): Promise<boolean> {
+async function publishFeatures(basePath: string, ociRegistry: string, namespace: string, cliDebugMode = false): Promise<boolean> {
     // Ensures we have the devcontainer CLI installed.
     if (!(await ensureDevcontainerCliPresent(cliDebugMode))) {
         core.setFailed('Failed to install devcontainer CLI');
         return false;
     }
 
-    const sourceMetadata = getGitHubMetadata();
-
     try {
         let cmd: string = 'devcontainer';
-        let args: string[] = ['features', 'publish', '-r', 'ghcr.io', '-n', `${sourceMetadata.owner}/${sourceMetadata.repo}`, basePath];
+        let args: string[] = ['features', 'publish', '-r', ociRegistry, '-n', namespace, basePath];
         if (cliDebugMode) {
             cmd = 'npx';
             args = ['-y', './devcontainer.tgz', ...args];

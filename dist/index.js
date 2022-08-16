@@ -116,7 +116,6 @@ function _generateDocumentation(basePath, readmeTemplate, metadataFile, ociRegis
                     return;
                 }
                 const srcInfo = (0, utils_1.getGitHubMetadata)();
-                const ref = srcInfo.ref;
                 const owner = srcInfo.owner;
                 const repo = srcInfo.repo;
                 // Add version
@@ -159,7 +158,7 @@ function _generateDocumentation(basePath, readmeTemplate, metadataFile, ociRegis
                     .replace('#{Notes}', generateNotesMarkdown())
                     // Features Only
                     .replace('#{Registry}', ociRegistry)
-                    .replace('#{Namespace}', namespace == '<owner>/<repo>' ? `${owner}/${repo}` : namespace)
+                    .replace('#{Namespace}', namespace)
                     .replace('#{Version}', version)
                     // Templates Only
                     .replace('#{ManifestName}', (_c = (_b = parsedJson === null || parsedJson === void 0 ? void 0 : parsedJson.image) === null || _b === void 0 ? void 0 : _b.manifest) !== null && _c !== void 0 ? _c : '')
@@ -231,12 +230,16 @@ function run() {
         const shouldPublishFeatures = core.getInput('publish-features').toLowerCase() === 'true';
         const shouldGenerateDocumentation = core.getInput('generate-docs').toLowerCase() === 'true';
         const featuresBasePath = core.getInput('base-path-to-features');
-        const ociRegistry = core.getInput('oci-registry');
-        const namespace = core.getInput('features-namespace');
+        const sourceMetadata = (0, utils_1.getGitHubMetadata)();
+        const inputOciRegistry = core.getInput('oci-registry');
+        const ociRegistry = inputOciRegistry && inputOciRegistry !== '' ? inputOciRegistry : 'ghcr.io';
+        const inputNamespace = core.getInput('namespace');
+        const namespace = inputNamespace && inputNamespace !== '' ? inputNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
         const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
+        // -- Publish
         if (shouldPublishFeatures) {
             core.info('Publishing features...');
-            yield publishFeatures(featuresBasePath, cliDebugMode);
+            yield publishFeatures(featuresBasePath, ociRegistry, namespace, cliDebugMode);
         }
         // -- Generate Documentation
         if (shouldGenerateDocumentation && featuresBasePath) {
@@ -245,17 +248,16 @@ function run() {
         }
     });
 }
-function publishFeatures(basePath, cliDebugMode = false) {
+function publishFeatures(basePath, ociRegistry, namespace, cliDebugMode = false) {
     return __awaiter(this, void 0, void 0, function* () {
         // Ensures we have the devcontainer CLI installed.
         if (!(yield (0, utils_1.ensureDevcontainerCliPresent)(cliDebugMode))) {
             core.setFailed('Failed to install devcontainer CLI');
             return false;
         }
-        const sourceMetadata = (0, utils_1.getGitHubMetadata)();
         try {
             let cmd = 'devcontainer';
-            let args = ['features', 'publish', '-r', 'ghcr.io', '-n', `${sourceMetadata.owner}/${sourceMetadata.repo}`, basePath];
+            let args = ['features', 'publish', '-r', ociRegistry, '-n', namespace, basePath];
             if (cliDebugMode) {
                 cmd = 'npx';
                 args = ['-y', './devcontainer.tgz', ...args];
