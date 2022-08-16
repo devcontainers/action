@@ -10,10 +10,6 @@ inputs:
     required: false
     default: "false"
     description: "['true'/'false'] Publish dev container 'feature' artifacts"
-  publish-templates:
-    required: false
-    default: "false"
-    description: "['true'/'false'] Publish dev container 'template' artifacts"
   generate-docs:
     required: false
     default: "false"
@@ -32,12 +28,6 @@ inputs:
     required: false
     default: "<owner>/<repo>"
     description: "A unique indentifier for the collection of features"
-
-  # 'template' options
-  base-path-to-templates:
-    required: false
-    default: ''
-    description: "Relative path to the folder containing dev container 'template(s)'"
 
 runs:
   using: 'node16'
