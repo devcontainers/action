@@ -248,13 +248,12 @@ function run() {
 function publishFeatures(basePath, cliDebugMode = false) {
     return __awaiter(this, void 0, void 0, function* () {
         // Ensures we have the devcontainer CLI installed.
-        if (!(yield (0, utils_1.fetchDevcontainerCli)())) {
+        if (!(yield (0, utils_1.ensureDevcontainerCliPresent)(cliDebugMode))) {
             core.setFailed('Failed to install devcontainer CLI');
             return false;
         }
         const sourceMetadata = (0, utils_1.getGitHubMetadata)();
         try {
-            core.info('Fetching the latest @devcontainer/cli...');
             let cmd = 'devcontainer';
             let args = ['features', 'publish', '-r', 'ghcr.io', '-n', `${sourceMetadata.owner}/${sourceMetadata.repo}`, basePath];
             if (cliDebugMode) {
@@ -315,7 +314,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.fetchDevcontainerCli = exports.isDevcontainerCliAvailable = exports.getGitHubMetadata = exports.renameLocal = exports.mkdirLocal = exports.writeLocalFile = exports.readLocalFile = void 0;
+exports.ensureDevcontainerCliPresent = exports.isDevcontainerCliAvailable = exports.getGitHubMetadata = exports.renameLocal = exports.mkdirLocal = exports.writeLocalFile = exports.readLocalFile = void 0;
 const github = __importStar(__nccwpck_require__(5438));
 const fs = __importStar(__nccwpck_require__(7147));
 const util_1 = __nccwpck_require__(3837);
@@ -364,7 +363,7 @@ function isDevcontainerCliAvailable(cliDebugMode = false) {
     });
 }
 exports.isDevcontainerCliAvailable = isDevcontainerCliAvailable;
-function fetchDevcontainerCli(cliDebugMode = false) {
+function ensureDevcontainerCliPresent(cliDebugMode = false) {
     return __awaiter(this, void 0, void 0, function* () {
         if (yield isDevcontainerCliAvailable(cliDebugMode)) {
             core.info('devcontainer CLI is already installed');
@@ -387,7 +386,7 @@ function fetchDevcontainerCli(cliDebugMode = false) {
         }
     });
 }
-exports.fetchDevcontainerCli = fetchDevcontainerCli;
+exports.ensureDevcontainerCliPresent = ensureDevcontainerCliPresent;
 
 
 /***/ }),

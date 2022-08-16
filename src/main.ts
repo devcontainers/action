@@ -5,7 +5,7 @@
 
 import * as core from '@actions/core';
 import { generateFeaturesDocumentation } from './generateDocs';
-import { fetchDevcontainerCli as ensureDevcontainerCliPresent, getGitHubMetadata } from './utils';
+import { ensureDevcontainerCliPresent, getGitHubMetadata } from './utils';
 import * as exec from '@actions/exec';
 
 async function run(): Promise<void> {
@@ -37,7 +37,7 @@ async function run(): Promise<void> {
 
 async function publishFeatures(basePath: string, cliDebugMode = false): Promise<boolean> {
     // Ensures we have the devcontainer CLI installed.
-    if (!(await ensureDevcontainerCliPresent())) {
+    if (!(await ensureDevcontainerCliPresent(cliDebugMode))) {
         core.setFailed('Failed to install devcontainer CLI');
         return false;
     }
@@ -45,8 +45,6 @@ async function publishFeatures(basePath: string, cliDebugMode = false): Promise<
     const sourceMetadata = getGitHubMetadata();
 
     try {
-        core.info('Fetching the latest @devcontainer/cli...');
-
         let cmd: string = 'devcontainer';
         let args: string[] = ['features', 'publish', '-r', 'ghcr.io', '-n', `${sourceMetadata.owner}/${sourceMetadata.repo}`, basePath];
         if (cliDebugMode) {

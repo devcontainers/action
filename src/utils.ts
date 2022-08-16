@@ -51,7 +51,7 @@ export async function isDevcontainerCliAvailable(cliDebugMode = false): Promise<
     }
 }
 
-export async function fetchDevcontainerCli(cliDebugMode = false): Promise<boolean> {
+export async function ensureDevcontainerCliPresent(cliDebugMode = false): Promise<boolean> {
     if (await isDevcontainerCliAvailable(cliDebugMode)) {
         core.info('devcontainer CLI is already installed');
         return true;
