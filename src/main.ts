@@ -7,35 +7,24 @@ import * as core from '@actions/core';
 import { Feature } from './contracts/features';
 import { Template } from './contracts/templates';
 import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
-import { addCollectionsMetadataFile, getFeaturesAndPackage, getTemplatesAndPackage } from './utils';
+import { fetchDevcontainerCli as ensureDevcontainerCliPresent, getGitHubMetadata } from './utils';
+import * as exec from '@actions/exec';
 
 async function run(): Promise<void> {
     core.debug('Reading input parameters...');
 
     // Read inputs
     const shouldPublishFeatures = core.getInput('publish-features').toLowerCase() === 'true';
-    const shouldPublishTemplates = core.getInput('publish-templates').toLowerCase() === 'true';
     const shouldGenerateDocumentation = core.getInput('generate-docs').toLowerCase() === 'true';
 
     const featuresBasePath = core.getInput('base-path-to-features');
-    const templatesBasePath = core.getInput('base-path-to-templates');
 
     const ociRegistry = core.getInput('oci-registry');
     const namespace = core.getInput('features-namespace');
 
-    let featuresMetadata: Feature[] | undefined = undefined;
-    let templatesMetadata: Template[] | undefined = undefined;
-
-    // -- Package Release Artifacts
-
     if (shouldPublishFeatures) {
         core.info('Publishing features...');
-        featuresMetadata = await packageFeatures(featuresBasePath);
-    }
-
-    if (shouldPublishTemplates) {
-        core.info('Publishing template...');
-        templatesMetadata = await packageTemplates(templatesBasePath);
+        await publishFeatures(featuresBasePath);
     }
 
     // -- Generate Documentation
@@ -44,46 +33,29 @@ async function run(): Promise<void> {
         core.info('Generating documentation for features...');
         await generateFeaturesDocumentation(featuresBasePath, ociRegistry, namespace);
     }
-
-    if (shouldGenerateDocumentation && templatesBasePath) {
-        core.info('Generating documentation for templates...');
-        await generateTemplateDocumentation(templatesBasePath);
-    }
-
-    // -- Programatically add feature/template metadata to collections file.
-
-    core.info('Generating metadata file: devcontainer-collection.json');
-    await addCollectionsMetadataFile(featuresMetadata, templatesMetadata);
 }
 
-async function packageFeatures(basePath: string): Promise<Feature[] | undefined> {
-    try {
-        core.info(`Archiving all features in ${basePath}`);
-        const metadata = await getFeaturesAndPackage(basePath);
-        core.info('Packaging features has finished.');
-        return metadata;
-    } catch (error) {
-        if (error instanceof Error) {
-            core.setFailed(error.message);
-        }
+async function publishFeatures(basePath: string): Promise<boolean> {
+    // Ensures we have the devcontainer CLI installed.
+    if (!(await ensureDevcontainerCliPresent())) {
+        core.setFailed('Failed to install devcontainer CLI');
+        return false;
     }
 
-    return;
-}
+    const sourceMetadata = getGitHubMetadata();
 
-async function packageTemplates(basePath: string): Promise<Template[] | undefined> {
     try {
-        core.info(`Archiving all templates in ${basePath}`);
-        const metadata = await getTemplatesAndPackage(basePath);
-        core.info('Packaging templates has finished.');
-        return metadata;
-    } catch (error) {
-        if (error instanceof Error) {
-            core.setFailed(error.message);
-        }
-    }
+        core.info('Fetching the latest @devcontainer/cli...');
+        const cmd: string = 'devcontainer';
+        const args: string[] = ['features', 'publish', '-r', 'ghcr.io', '-n', `${sourceMetadata.owner}/${sourceMetadata.repo}`, basePath];
 
-    return;
+        const res = await exec.getExecOutput(cmd, args, {
+            ignoreReturnCode: true
+        });
+        return res.exitCode === 0;
+    } catch (err) {
+        return false;
+    }
 }
 
 run();
