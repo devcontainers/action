@@ -233,9 +233,10 @@ function run() {
         const featuresBasePath = core.getInput('base-path-to-features');
         const ociRegistry = core.getInput('oci-registry');
         const namespace = core.getInput('features-namespace');
+        const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
         if (shouldPublishFeatures) {
             core.info('Publishing features...');
-            yield publishFeatures(featuresBasePath);
+            yield publishFeatures(featuresBasePath, cliDebugMode);
         }
         // -- Generate Documentation
         if (shouldGenerateDocumentation && featuresBasePath) {
@@ -244,7 +245,7 @@ function run() {
         }
     });
 }
-function publishFeatures(basePath) {
+function publishFeatures(basePath, cliDebugMode = false) {
     return __awaiter(this, void 0, void 0, function* () {
         // Ensures we have the devcontainer CLI installed.
         if (!(yield (0, utils_1.fetchDevcontainerCli)())) {
@@ -254,8 +255,12 @@ function publishFeatures(basePath) {
         const sourceMetadata = (0, utils_1.getGitHubMetadata)();
         try {
             core.info('Fetching the latest @devcontainer/cli...');
-            const cmd = 'devcontainer';
-            const args = ['features', 'publish', '-r', 'ghcr.io', '-n', `${sourceMetadata.owner}/${sourceMetadata.repo}`, basePath];
+            let cmd = 'devcontainer';
+            let args = ['features', 'publish', '-r', 'ghcr.io', '-n', `${sourceMetadata.owner}/${sourceMetadata.repo}`, basePath];
+            if (cliDebugMode) {
+                cmd = 'npx';
+                args = ['-y', './devcontainer.tgz', ...args];
+            }
             const res = yield exec.getExecOutput(cmd, args, {
                 ignoreReturnCode: true
             });
@@ -337,10 +342,16 @@ function getGitHubMetadata() {
     return metadata;
 }
 exports.getGitHubMetadata = getGitHubMetadata;
-function isDevcontainerCliAvailable() {
+function isDevcontainerCliAvailable(cliDebugMode = false) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const res = yield exec.getExecOutput('devcontainer', ['--version'], {
+            let cmd = 'devcontainer';
+            let args = ['--version'];
+            if (cliDebugMode) {
+                cmd = 'npx';
+                args = ['-y', './devcontainer.tgz', ...args];
+            }
+            const res = yield exec.getExecOutput(cmd, args, {
                 ignoreReturnCode: true,
                 silent: true
             });
@@ -353,11 +364,15 @@ function isDevcontainerCliAvailable() {
     });
 }
 exports.isDevcontainerCliAvailable = isDevcontainerCliAvailable;
-function fetchDevcontainerCli() {
+function fetchDevcontainerCli(cliDebugMode = false) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (yield isDevcontainerCliAvailable()) {
+        if (yield isDevcontainerCliAvailable(cliDebugMode)) {
             core.info('devcontainer CLI is already installed');
             return true;
+        }
+        if (cliDebugMode) {
+            core.error('Cannot remotely fetch CLI in debug mode');
+            return false;
         }
         try {
             core.info('Fetching the latest @devcontainer/cli...');

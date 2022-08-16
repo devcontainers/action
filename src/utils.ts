@@ -32,9 +32,15 @@ export function getGitHubMetadata() {
     return metadata;
 }
 
-export async function isDevcontainerCliAvailable(): Promise<boolean> {
+export async function isDevcontainerCliAvailable(cliDebugMode = false): Promise<boolean> {
     try {
-        const res = await exec.getExecOutput('devcontainer', ['--version'], {
+        let cmd = 'devcontainer';
+        let args = ['--version'];
+        if (cliDebugMode) {
+            cmd = 'npx';
+            args = ['-y', './devcontainer.tgz', ...args];
+        }
+        const res = await exec.getExecOutput(cmd, args, {
             ignoreReturnCode: true,
             silent: true
         });
@@ -45,10 +51,15 @@ export async function isDevcontainerCliAvailable(): Promise<boolean> {
     }
 }
 
-export async function fetchDevcontainerCli(): Promise<boolean> {
-    if (await isDevcontainerCliAvailable()) {
+export async function fetchDevcontainerCli(cliDebugMode = false): Promise<boolean> {
+    if (await isDevcontainerCliAvailable(cliDebugMode)) {
         core.info('devcontainer CLI is already installed');
         return true;
+    }
+
+    if (cliDebugMode) {
+        core.error('Cannot remotely fetch CLI in debug mode');
+        return false;
     }
 
     try {

@@ -4,9 +4,7 @@
  *-------------------------------------------------------------------------------------------------------------*/
 
 import * as core from '@actions/core';
-import { Feature } from './contracts/features';
-import { Template } from './contracts/templates';
-import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
+import { generateFeaturesDocumentation } from './generateDocs';
 import { fetchDevcontainerCli as ensureDevcontainerCliPresent, getGitHubMetadata } from './utils';
 import * as exec from '@actions/exec';
 
@@ -22,9 +20,11 @@ async function run(): Promise<void> {
     const ociRegistry = core.getInput('oci-registry');
     const namespace = core.getInput('features-namespace');
 
+    const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
+
     if (shouldPublishFeatures) {
         core.info('Publishing features...');
-        await publishFeatures(featuresBasePath);
+        await publishFeatures(featuresBasePath, cliDebugMode);
     }
 
     // -- Generate Documentation
@@ -35,7 +35,7 @@ async function run(): Promise<void> {
     }
 }
 
-async function publishFeatures(basePath: string): Promise<boolean> {
+async function publishFeatures(basePath: string, cliDebugMode = false): Promise<boolean> {
     // Ensures we have the devcontainer CLI installed.
     if (!(await ensureDevcontainerCliPresent())) {
         core.setFailed('Failed to install devcontainer CLI');
@@ -46,8 +46,13 @@ async function publishFeatures(basePath: string): Promise<boolean> {
 
     try {
         core.info('Fetching the latest @devcontainer/cli...');
-        const cmd: string = 'devcontainer';
-        const args: string[] = ['features', 'publish', '-r', 'ghcr.io', '-n', `${sourceMetadata.owner}/${sourceMetadata.repo}`, basePath];
+
+        let cmd: string = 'devcontainer';
+        let args: string[] = ['features', 'publish', '-r', 'ghcr.io', '-n', `${sourceMetadata.owner}/${sourceMetadata.repo}`, basePath];
+        if (cliDebugMode) {
+            cmd = 'npx';
+            args = ['-y', './devcontainer.tgz', ...args];
+        }
 
         const res = await exec.getExecOutput(cmd, args, {
             ignoreReturnCode: true
