@@ -7,7 +7,7 @@
   "scripts": {
     "format": "prettier --write '**/*.ts'",
     "format-check": "prettier --check '**/*.ts'",
-    "build": "tsc && npx @vercel/ncc build && npx convert-action",
+    "build": "tsc && npx @vercel/ncc build && npx -y convert-action",
     "test": "jest"
   },
   "repository": {
