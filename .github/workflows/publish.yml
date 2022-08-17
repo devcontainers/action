@@ -19,10 +19,10 @@ jobs:
           node-version: 16.x
 
       - name: Install dependencies
-        run: rm -rf node_modules && yarn install --frozen-lockfile
+        run: rm -rf node_modules && yarn
 
       - name: Install deps and build
-        run: yarn build && yarn package
+        run: yarn build
 
       - uses: JasonEtco/build-and-tag-action@v2
         env:
