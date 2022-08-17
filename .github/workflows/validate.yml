@@ -1,9 +1,7 @@
 name: Validate
 
-on: 
-  push:
-    branches:
-      - main
+on:
+  pull_request:
 
 jobs:
   check-dist:

@@ -5,12 +5,13 @@
   "description": "Action to help build/lint/publish self-authored dev container assets",
   "main": "lib/main.js",
   "scripts": {
-    "build": "tsc",
+    "compile": "tsc",
     "format": "prettier --write '**/*.ts'",
     "format-check": "prettier --check '**/*.ts'",
     "package": "ncc build --source-map --license licenses.txt",
+    "build": "npx @vercel/ncc build && npx convert-action",
     "test": "jest",
-    "all": "yarn build && yarn format && yarn package && yarn test"
+    "all": "yarn compile && yarn format && yarn package && yarn test"
   },
   "repository": {
     "type": "git",
