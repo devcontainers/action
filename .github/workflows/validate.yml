@@ -12,10 +12,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set Node.js 12.x
-        uses: actions/setup-node@v3.4.1
+      - name: Set Node.js 16.x
+        uses: actions/setup-node@v2.5.1
         with:
-          node-version: 12.x
+          node-version: 16.x
 
       - name: Install dependencies
         run: rm -rf node_modules && yarn install --frozen-lockfile
@@ -38,13 +38,3 @@ jobs:
         with:
           name: dist
           path: dist/
-
-#   release-on-push:
-#     runs-on: ubuntu-latest
-#     needs: check-dist # Only runs if the the dist is up-to-date.
-#     env:
-#       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-#     steps:
-#       - uses: rymndhng/release-on-push-action@master
-#         with:
-#           bump_version_scheme: patch

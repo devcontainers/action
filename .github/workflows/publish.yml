@@ -1,0 +1,26 @@
+name: Publish
+
+on:
+  release:
+    types: [published, edited]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set Node.js 16.x
+        uses: actions/setup-node@v2.5.1
+        with:
+          node-version: 16.x
+          
+      - name: Install deps and build
+        run: yarn build && yarn package
+
+      - uses: JasonEtco/build-and-tag-action@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
