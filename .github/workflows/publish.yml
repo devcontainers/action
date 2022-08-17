@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: rm -rf node_modules && yarn
 
-      - name: Install deps and build
+      - name: Build
         run: yarn build
 
       - uses: JasonEtco/build-and-tag-action@v2

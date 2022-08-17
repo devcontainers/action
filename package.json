@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "description": "Action to help build/lint/publish self-authored dev container assets",
-  "main": "lib/main.js",
+  "main": "dist/index.js",
   "scripts": {
     "format": "prettier --write '**/*.ts'",
     "format-check": "prettier --check '**/*.ts'",
-    "build": "tsc && npx @vercel/ncc build && npx -y convert-action",
+    "build": "npx -y @vercel/ncc build ./src/main.ts",
     "test": "jest"
   },
   "repository": {
