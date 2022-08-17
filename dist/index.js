@@ -116,8 +116,6 @@ function _generateDocumentation(basePath, readmeTemplate, metadataFile, ociRegis
                     return;
                 }
                 const srcInfo = (0, utils_1.getGitHubMetadata)();
-                const owner = srcInfo.owner;
-                const repo = srcInfo.repo;
                 // Add version
                 let version = 'latest';
                 const parsedVersion = parsedJson === null || parsedJson === void 0 ? void 0 : parsedJson.version;

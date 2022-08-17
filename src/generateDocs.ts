@@ -78,9 +78,6 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
 
                 const srcInfo = getGitHubMetadata();
 
-                const owner = srcInfo.owner;
-                const repo = srcInfo.repo;
-
                 // Add version
                 let version = 'latest';
                 const parsedVersion: string = parsedJson?.version;
