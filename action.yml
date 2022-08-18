@@ -1,6 +1,6 @@
-name: Dev Container
-description: Publish custom development container assets
-author: GitHub
+name: Dev Container Publish
+description: Package and publish development container assets
+author: devcontainers
 branding:
   icon: box
   color: blue
