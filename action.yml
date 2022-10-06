@@ -5,16 +5,17 @@ branding:
   icon: box
   color: blue
 inputs:
-  publish-features:
-    required: false
-    default: 'false'
-    description: '[''true''/''false''] Publish dev container ''feature'' artifacts'
   generate-docs:
     required: false
     default: 'false'
     description: >-
       Parse machine-readable (.json) configuration files and commit standardized
       documentation
+  # Feature specific inputs
+  publish-features:
+    required: false
+    default: 'false'
+    description: '[''true''/''false''] Publish dev container ''feature'' artifacts'
   base-path-to-features:
     required: false
     default: ''
@@ -27,6 +28,23 @@ inputs:
   features-namespace:
     required: false
     description: A unique indentifier for the collection of features
+  # Template specific inputs
+  publish-templates:
+    required: false
+    default: 'false'
+    description: '[''true''/''false''] Publish dev container ''template'' artifacts'
+  base-path-to-templates:
+    required: false
+    default: ''
+    description: Relative path to the 'src' folder containing dev container 'template(s)'
+  oci-registry-for-templates:
+    required: false
+    description: >-
+      Name of the OCI registry that implements the OCI Artifact Distribution
+      Specification
+  templates-namespace:
+    required: false
+    description: A unique indentifier for the collection of templates
 runs:
   using: node12
   main: dist/index.js

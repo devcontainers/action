@@ -37,6 +37,12 @@ const TEMPLATE_README_TEMPLATE = `
 ## Options
 
 #{OptionsTable}
+
+#{Notes}
+
+---
+
+_Note: This file was auto-generated from the [devcontainer-template.json](#{RepoUrl}).  Add additional notes to a \`NOTES.md\`._
 `;
 
 export async function generateFeaturesDocumentation(basePath: string, ociRegistry: string, namespace: string) {
@@ -109,10 +115,10 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     return fs.existsSync(notesPath) ? fs.readFileSync(path.join(notesPath), 'utf8') : '';
                 };
 
-                let urlToConfig = './devcontainer-feature.json';
+                let urlToConfig = `./${metadataFile}`;
                 const basePathTrimmed = basePath.startsWith('./') ? basePath.substring(2) : basePath;
                 if (srcInfo.owner && srcInfo.repo) {
-                    urlToConfig = `https://github.com/${srcInfo.owner}/${srcInfo.repo}/blob/main/${basePathTrimmed}/${f}/devcontainer-feature.json`;
+                    urlToConfig = `https://github.com/${srcInfo.owner}/${srcInfo.repo}/blob/main/${basePathTrimmed}/${f}/${metadataFile}`;
                 }
 
                 const newReadme = readmeTemplate
@@ -122,13 +128,12 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     .replace('#{Description}', parsedJson.description ?? '')
                     .replace('#{OptionsTable}', generateOptionsMarkdown())
                     .replace('#{Notes}', generateNotesMarkdown())
+                    .replace('#{RepoUrl}', urlToConfig)
                     // Features Only
                     .replace('#{Registry}', ociRegistry)
                     .replace('#{Namespace}', namespace)
-                    .replace('#{Version}', version)
-                    // Templates Only
-                    .replace('#{ManifestName}', parsedJson?.image?.manifest ?? '')
-                    .replace('#{RepoUrl}', urlToConfig);
+                    .replace('#{Version}', version);
+
 
                 // Remove previous readme
                 if (fs.existsSync(readmePath)) {

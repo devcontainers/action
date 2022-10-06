@@ -4,7 +4,7 @@
  *-------------------------------------------------------------------------------------------------------------*/
 
 import * as core from '@actions/core';
-import { generateFeaturesDocumentation } from './generateDocs';
+import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
 import { ensureDevcontainerCliPresent, getGitHubMetadata } from './utils';
 import * as exec from '@actions/exec';
 
@@ -12,37 +12,69 @@ async function run(): Promise<void> {
     core.debug('Reading input parameters...');
 
     // Read inputs
-    const shouldPublishFeatures = core.getInput('publish-features').toLowerCase() === 'true';
     const shouldGenerateDocumentation = core.getInput('generate-docs').toLowerCase() === 'true';
+    const sourceMetadata = getGitHubMetadata();
+
+    // Read inputs - Features
+    const shouldPublishFeatures = core.getInput('publish-features').toLowerCase() === 'true';
 
     const featuresBasePath = core.getInput('base-path-to-features');
 
-    const sourceMetadata = getGitHubMetadata();
+    const inputFeaturesOciRegistry = core.getInput('oci-registry');
+    const featuresOciRegistry = inputFeaturesOciRegistry && inputFeaturesOciRegistry !== '' ? inputFeaturesOciRegistry : 'ghcr.io';
 
-    const inputOciRegistry = core.getInput('oci-registry');
-    const ociRegistry = inputOciRegistry && inputOciRegistry !== '' ? inputOciRegistry : 'ghcr.io';
+    const inputFeaturesNamespace = core.getInput('features-namespace');
+    const featuresNamespace = inputFeaturesNamespace && inputFeaturesNamespace !== '' ? inputFeaturesNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
 
-    const inputNamespace = core.getInput('namespace');
-    const namespace = inputNamespace && inputNamespace !== '' ? inputNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
+    // Read inputs - Templates
+    const shouldPublishTemplates = core.getInput('publish-templates').toLowerCase() === 'true';
+
+    const templatesBasePath = core.getInput('base-path-to-templates');
+
+    const inputTemplatesOciRegistry = core.getInput('oci-registry-for-templates');
+    const templatesOciRegistry = inputTemplatesOciRegistry && inputTemplatesOciRegistry !== '' ? inputTemplatesOciRegistry : 'ghcr.io';
+
+    const inputTemplateNamespace = core.getInput('templates-namespace');
+    const templatesNamespace = inputTemplateNamespace && inputTemplateNamespace !== '' ? inputTemplateNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
 
     const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
 
     // -- Publish
 
+    if (shouldPublishFeatures && shouldPublishTemplates) {
+        core.setFailed('(!) Features and Templates should be published from different repositories.');
+        return;
+    }
+
+    if (shouldGenerateDocumentation && featuresBasePath && templatesBasePath) {
+        core.setFailed('(!) Features and Templates should exist in different repositories.');
+        return;
+    }
+
     if (shouldPublishFeatures) {
         core.info('Publishing features...');
-        await publishFeatures(featuresBasePath, ociRegistry, namespace, cliDebugMode);
+        await publish(featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode, 'feature');
+    }
+
+    if (shouldPublishTemplates) {
+        core.info('Publishing templates...');
+        await publish(templatesBasePath, templatesOciRegistry, templatesNamespace, cliDebugMode, `template`);
     }
 
     // -- Generate Documentation
 
     if (shouldGenerateDocumentation && featuresBasePath) {
         core.info('Generating documentation for features...');
-        await generateFeaturesDocumentation(featuresBasePath, ociRegistry, namespace);
+        await generateFeaturesDocumentation(featuresBasePath, featuresOciRegistry, featuresNamespace);
+    }
+
+    if (shouldGenerateDocumentation && templatesBasePath) {
+        core.info('Generating documentation for templates...');
+        await generateTemplateDocumentation(templatesBasePath);
     }
 }
 
-async function publishFeatures(basePath: string, ociRegistry: string, namespace: string, cliDebugMode = false): Promise<boolean> {
+async function publish(basePath: string, ociRegistry: string, namespace: string, cliDebugMode = false, collectionType: string): Promise<boolean> {
     // Ensures we have the devcontainer CLI installed.
     if (!(await ensureDevcontainerCliPresent(cliDebugMode))) {
         core.setFailed('Failed to install devcontainer CLI');
@@ -51,7 +83,7 @@ async function publishFeatures(basePath: string, ociRegistry: string, namespace:
 
     try {
         let cmd: string = 'devcontainer';
-        let args: string[] = ['features', 'publish', '-r', ociRegistry, '-n', namespace, basePath];
+        let args: string[] = [`${collectionType}s`, 'publish', '-r', ociRegistry, '-n', namespace, basePath];
         if (cliDebugMode) {
             cmd = 'npx';
             args = ['-y', './devcontainer.tgz', ...args];
