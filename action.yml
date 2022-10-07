@@ -15,7 +15,7 @@ inputs:
   publish-features:
     required: false
     default: 'false'
-    description: '[''true''/''false''] Publish dev container ''feature'' artifacts'
+    description: ['true'/'false'] Publish dev container 'feature' artifacts
   base-path-to-features:
     required: false
     default: ''
@@ -27,12 +27,12 @@ inputs:
       Specification
   features-namespace:
     required: false
-    description: A unique indentifier for the collection of features
+    description: A unique identifier for the collection of features
   # Template specific inputs
   publish-templates:
     required: false
     default: 'false'
-    description: '[''true''/''false''] Publish dev container ''template'' artifacts'
+    description: ['true'/'false'] Publish dev container 'template' artifacts
   base-path-to-templates:
     required: false
     default: ''
@@ -44,7 +44,7 @@ inputs:
       Specification
   templates-namespace:
     required: false
-    description: A unique indentifier for the collection of templates
+    description: A unique identifier for the collection of templates
 runs:
   using: node12
   main: dist/index.js

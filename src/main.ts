@@ -24,7 +24,7 @@ async function run(): Promise<void> {
     const featuresOciRegistry = inputFeaturesOciRegistry && inputFeaturesOciRegistry !== '' ? inputFeaturesOciRegistry : 'ghcr.io';
 
     const inputFeaturesNamespace = core.getInput('features-namespace');
-    const featuresNamespace = inputFeaturesNamespace && inputFeaturesNamespace !== '' ? inputFeaturesNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
+    const featuresNamespace = !!inputFeaturesNamespace ? inputFeaturesNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
 
     // Read inputs - Templates
     const shouldPublishTemplates = core.getInput('publish-templates').toLowerCase() === 'true';
@@ -32,7 +32,7 @@ async function run(): Promise<void> {
     const templatesBasePath = core.getInput('base-path-to-templates');
 
     const inputTemplatesOciRegistry = core.getInput('oci-registry-for-templates');
-    const templatesOciRegistry = inputTemplatesOciRegistry && inputTemplatesOciRegistry !== '' ? inputTemplatesOciRegistry : 'ghcr.io';
+    const templatesOciRegistry = !!inputTemplatesOciRegistry ? inputTemplatesOciRegistry : 'ghcr.io';
 
     const inputTemplateNamespace = core.getInput('templates-namespace');
     const templatesNamespace = inputTemplateNamespace && inputTemplateNamespace !== '' ? inputTemplateNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
@@ -53,12 +53,12 @@ async function run(): Promise<void> {
 
     if (shouldPublishFeatures) {
         core.info('Publishing features...');
-        await publish(featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode, 'feature');
+        await publish('feature', featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode);
     }
 
     if (shouldPublishTemplates) {
         core.info('Publishing templates...');
-        await publish(templatesBasePath, templatesOciRegistry, templatesNamespace, cliDebugMode, `template`);
+        await publish('template', templatesBasePath, templatesOciRegistry, templatesNamespace, cliDebugMode);
     }
 
     // -- Generate Documentation
@@ -74,7 +74,7 @@ async function run(): Promise<void> {
     }
 }
 
-async function publish(basePath: string, ociRegistry: string, namespace: string, cliDebugMode = false, collectionType: string): Promise<boolean> {
+async function publish(collectionType: string, basePath: string, ociRegistry: string, namespace: string, cliDebugMode = false): Promise<boolean> {
     // Ensures we have the devcontainer CLI installed.
     if (!(await ensureDevcontainerCliPresent(cliDebugMode))) {
         core.setFailed('Failed to install devcontainer CLI');

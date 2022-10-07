@@ -115,7 +115,7 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     return fs.existsSync(notesPath) ? fs.readFileSync(path.join(notesPath), 'utf8') : '';
                 };
 
-                let urlToConfig = `./${metadataFile}`;
+                let urlToConfig = `${metadataFile}`;
                 const basePathTrimmed = basePath.startsWith('./') ? basePath.substring(2) : basePath;
                 if (srcInfo.owner && srcInfo.repo) {
                     urlToConfig = `https://github.com/${srcInfo.owner}/${srcInfo.repo}/blob/main/${basePathTrimmed}/${f}/${metadataFile}`;
