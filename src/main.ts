@@ -21,7 +21,7 @@ async function run(): Promise<void> {
     const featuresBasePath = core.getInput('base-path-to-features');
 
     const inputFeaturesOciRegistry = core.getInput('oci-registry');
-    const featuresOciRegistry = inputFeaturesOciRegistry && inputFeaturesOciRegistry !== '' ? inputFeaturesOciRegistry : 'ghcr.io';
+    const featuresOciRegistry = !!inputFeaturesOciRegistry ? inputFeaturesOciRegistry : 'ghcr.io';
 
     const inputFeaturesNamespace = core.getInput('features-namespace');
     const featuresNamespace = !!inputFeaturesNamespace ? inputFeaturesNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
@@ -35,7 +35,7 @@ async function run(): Promise<void> {
     const templatesOciRegistry = !!inputTemplatesOciRegistry ? inputTemplatesOciRegistry : 'ghcr.io';
 
     const inputTemplateNamespace = core.getInput('templates-namespace');
-    const templatesNamespace = inputTemplateNamespace && inputTemplateNamespace !== '' ? inputTemplateNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
+    const templatesNamespace = !!inputTemplateNamespace ? inputTemplateNamespace : `${sourceMetadata.owner}/${sourceMetadata.repo}`;
 
     const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
 
