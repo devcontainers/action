@@ -15,11 +15,13 @@ inputs:
   publish-features:
     required: false
     default: 'false'
-    description: ['true'/'false'] Publish dev container 'feature' artifacts
+    description: >-
+      (true/false) Enable publishing Dev Container Feature(s).
+      Cannot be combined with publish-templates.
   base-path-to-features:
     required: false
     default: ''
-    description: Relative path to the folder containing dev container 'feature(s)'
+    description: Relative path to the folder containing Dev Container Feature(s)
   oci-registry:
     required: false
     description: >-
@@ -27,16 +29,20 @@ inputs:
       Specification
   features-namespace:
     required: false
-    description: A unique identifier for the collection of features
+    description: >- 
+      Published Feature IDs will be prefixed with the namespace.
+      If omitted, this value will default to the source repo name
   # Template specific inputs
   publish-templates:
     required: false
     default: 'false'
-    description: ['true'/'false'] Publish dev container 'template' artifacts
+    description: >-
+      (true/false) Enable publishing Dev Container Template(s).
+      Cannot be combined with publish-features.
   base-path-to-templates:
     required: false
     default: ''
-    description: Relative path to the folder containing dev container 'template(s)'
+    description: Relative path to the folder containing Dev Container Template(s)
   oci-registry-for-templates:
     required: false
     description: >-
@@ -44,7 +50,9 @@ inputs:
       Specification
   templates-namespace:
     required: false
-    description: A unique identifier for the collection of templates
+    description: >- 
+      Published Template IDs will be prefixed with the namespace.
+      If omitted, this value will default to the source repo name
 runs:
   using: node12
   main: dist/index.js
