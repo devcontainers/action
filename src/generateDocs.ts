@@ -65,7 +65,7 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                 const jsonPath = path.join(basePath, f, metadataFile);
 
                 if (!fs.existsSync(jsonPath)) {
-                    core.error(`${metadataFile} not found at path '${jsonPath}'`);
+                    core.info(`(!) Warning: ${metadataFile} not found at path '${jsonPath}'. Skipping...`);
                     return;
                 }
 
