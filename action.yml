@@ -19,7 +19,7 @@ inputs:
   base-path-to-features:
     required: false
     default: ''
-    description: Relative path to the 'src' folder containing dev container 'feature(s)'
+    description: Relative path to the folder containing dev container 'feature(s)'
   oci-registry:
     required: false
     description: >-
@@ -36,7 +36,7 @@ inputs:
   base-path-to-templates:
     required: false
     default: ''
-    description: Relative path to the 'src' folder containing dev container 'template(s)'
+    description: Relative path to the folder containing dev container 'template(s)'
   oci-registry-for-templates:
     required: false
     description: >-
