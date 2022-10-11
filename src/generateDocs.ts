@@ -18,8 +18,6 @@ const FEATURES_README_TEMPLATE = `
 }
 \`\`\`
 
-## Options
-
 #{OptionsTable}
 
 #{Notes}
@@ -33,8 +31,6 @@ const TEMPLATE_README_TEMPLATE = `
 # #{Name}
 
 #{Description}
-
-## Options
 
 #{OptionsTable}
 
@@ -107,7 +103,7 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                         })
                         .join('\n');
 
-                    return '| Options Id | Description | Type | Default Value |\n' + '|-----|-----|-----|-----|\n' + contents;
+                    return '## Options\n\n' + '| Options Id | Description | Type | Default Value |\n' + '|-----|-----|-----|-----|\n' + contents;
                 };
 
                 const generateNotesMarkdown = () => {
