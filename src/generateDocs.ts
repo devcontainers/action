@@ -102,7 +102,7 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                             
                             const desc = val.description || '-';
                             const type = val.type || '-';
-                            const def = val.default !== undefined ? val.default : '-';
+                            const def = val.default !== "" ? val.default : '-';
                             
                             return `| ${k} | ${desc} | ${type} | ${def} |`;
                         })
