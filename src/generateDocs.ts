@@ -99,7 +99,12 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     const contents = keys
                         .map(k => {
                             const val = options[k];
-                            return `| ${k} | ${val.description || '-'} | ${val.type || '-'} | ${val.default || '-'} |`;
+                            
+                            const desc = val.description || '-';
+                            const type = val.type || '-';
+                            const def = val.default !== undefined ? val.default : '-';
+                            
+                            return `| ${k} | ${desc} | ${type} | ${def} |`;
                         })
                         .join('\n');
 
