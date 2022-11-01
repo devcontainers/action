@@ -12,9 +12,7 @@ const FEATURES_README_TEMPLATE = `
 
 \`\`\`json
 "features": {
-    "#{Registry}/#{Namespace}/#{Id}:#{Version}": {
-        "version": "latest"
-    }
+    "#{Registry}/#{Namespace}/#{Id}:#{Version}": {}
 }
 \`\`\`
 
