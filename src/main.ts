@@ -88,11 +88,9 @@ async function publish(collectionType: string, basePath: string, ociRegistry: st
             cmd = 'npx';
             args = ['-y', './devcontainer.tgz', ...args];
         }
-
-        const res = await exec.getExecOutput(cmd, args, {
-            ignoreReturnCode: true
-        });
-        return res.exitCode === 0;
+        
+        // Fails on non-zero exit code from the invoked process
+        await exec.getExecOutput(cmd, args, {});
     } catch (err: any) {
         core.setFailed(err?.message);
         return false;
