@@ -53,12 +53,18 @@ async function run(): Promise<void> {
 
     if (shouldPublishFeatures) {
         core.info('Publishing features...');
-        await publish('feature', featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode);
+        if (!(await publish('feature', featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode))) {
+            core.setFailed('(!) Failed to publish features.');
+            return;
+        }
     }
 
     if (shouldPublishTemplates) {
         core.info('Publishing templates...');
-        await publish('template', templatesBasePath, templatesOciRegistry, templatesNamespace, cliDebugMode);
+        if (!(await publish('template', templatesBasePath, templatesOciRegistry, templatesNamespace, cliDebugMode))) {
+            core.setFailed('(!) Failed to publish templates.');
+            return;
+        }
     }
 
     // -- Generate Documentation
@@ -88,9 +94,10 @@ async function publish(collectionType: string, basePath: string, ociRegistry: st
             cmd = 'npx';
             args = ['-y', './devcontainer.tgz', ...args];
         }
-        
+
         // Fails on non-zero exit code from the invoked process
-        await exec.getExecOutput(cmd, args, {});
+        const res = await exec.getExecOutput(cmd, args, {});
+        return res.exitCode === 0;
     } catch (err: any) {
         core.setFailed(err?.message);
         return false;

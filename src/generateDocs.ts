@@ -97,11 +97,11 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     const contents = keys
                         .map(k => {
                             const val = options[k];
-                            
+
                             const desc = val.description || '-';
                             const type = val.type || '-';
-                            const def = val.default !== "" ? val.default : '-';
-                            
+                            const def = val.default !== '' ? val.default : '-';
+
                             return `| ${k} | ${desc} | ${type} | ${def} |`;
                         })
                         .join('\n');
@@ -132,7 +132,6 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     .replace('#{Registry}', ociRegistry)
                     .replace('#{Namespace}', namespace)
                     .replace('#{Version}', version);
-
 
                 // Remove previous readme
                 if (fs.existsSync(readmePath)) {
