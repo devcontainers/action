@@ -8,14 +8,17 @@
 </td>
 </tr></table>
 
-This action is used to package and generate documentation for [dev container features](https://containers.dev/implementors/features/).  
+This action is used to package and generate documentation for dev container [Features](https://containers.dev/implementors/features/) and [Templates](https://containers.dev/implementors/templates/).  
 
-Running this action will publish all dev container features in accordance with the [_proposed_ dev container feature distribution specification](https://containers.dev/implementors/features-distribution/).
+Running this action will publish dev container Features and templates in accordance with following specifications:
+
+ - [Dev container Feature distribution specification](https://containers.dev/implementors/features-distribution/)
+ - [Dev container Template distribution specification](https://containers.dev/implementors/templates-distribution/)
 
 This action is used in the [`devcontainer/features`](https://github.com/devcontainers/features) repo, in the [release.yaml](https://github.com/devcontainers/features/blob/main/.github/workflows/release.yaml) workflow.
 
 ## Usage
 
-This GitHub action can be used to self-publish your own dev container features.
+See the [action.yml](https://github.com/devcontainers/action/blob/main/action.yml) for available options.
 
-To get started, create your own repo from the [`devcontainers/feature-template`](https://github.com/devcontainers/feature-template) template, customize the provided example features, and trigger the `release.yaml` workflow.
+To best get started, create your own repo from the [`devcontainers/feature-starter`](https://github.com/devcontainers/feature-starter) or  [`devcontainers/template-starter`](https://github.com/devcontainers/template-starter) repos, customize the provided examples, and trigger the `release.yaml` workflow.
