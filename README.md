@@ -22,3 +22,7 @@ This action is used in the [`devcontainer/features`](https://github.com/devconta
 See the [action.yml](https://github.com/devcontainers/action/blob/main/action.yml) for available options.
 
 To best get started, create your own repo from the [`devcontainers/feature-starter`](https://github.com/devcontainers/feature-starter) or  [`devcontainers/template-starter`](https://github.com/devcontainers/template-starter) repos, customize the provided examples, and trigger the `release.yaml` workflow.
+
+## Design
+
+Internally, this GitHub Action will fetch the latest published version of the [Dev Container CLI](https://github.com/devcontainers/cli) and execute the appropriate CLI commands - namely `devcontainer features publish` and `devcontainer templates publish`.   
