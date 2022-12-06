@@ -5,7 +5,7 @@
 
 import * as core from '@actions/core';
 import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
-import { ensureDevcontainerCliPresent, getGitHubMetadata } from './utils';
+import { addRepoTagForPublishedTag, ensureDevcontainerCliPresent, getGitHubMetadata } from './utils';
 import * as exec from '@actions/exec';
 
 async function run(): Promise<void> {
@@ -52,18 +52,42 @@ async function run(): Promise<void> {
     }
 
     if (shouldPublishFeatures) {
-        core.info('Publishing features...');
-        if (!(await publish('feature', featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode))) {
-            core.setFailed('(!) Failed to publish features.');
+        core.info('Publishing Features...');
+        const publishedFeatures = await publish('feature', featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode);
+        if (!publishedFeatures) {
+            core.setFailed('(!) Failed to publish Features.');
             return;
+        }
+
+        // Add repo tags at the current commit.
+        for (const featureId in publishedFeatures) {
+            const versions = publishedFeatures[featureId];
+            for (const version of versions) {
+                if (!(await addRepoTagForPublishedTag('feature', featureId, version))) {
+                    core.setFailed('(!) Failed to add repo tag for a Feature release.');
+                    continue;
+                }
+            }
         }
     }
 
     if (shouldPublishTemplates) {
-        core.info('Publishing templates...');
-        if (!(await publish('template', templatesBasePath, templatesOciRegistry, templatesNamespace, cliDebugMode))) {
-            core.setFailed('(!) Failed to publish templates.');
+        core.info('Publishing Templates...');
+        const publishedTemplates = await publish('template', templatesBasePath, templatesOciRegistry, templatesNamespace, cliDebugMode);
+        if (!publishedTemplates) {
+            core.setFailed('(!) Failed to publish Templates.');
             return;
+        }
+
+        // Add repo tags at the current commit.
+        for (const templateId in publishedTemplates) {
+            const versions = publishedTemplates[templateId];
+            for (const version of versions) {
+                if (!(await addRepoTagForPublishedTag('template', templateId, version))) {
+                    core.setFailed('(!) Failed to add repo tag for a Template release.');
+                    continue;
+                }
+            }
         }
     }
 
@@ -80,11 +104,17 @@ async function run(): Promise<void> {
     }
 }
 
-async function publish(collectionType: string, basePath: string, ociRegistry: string, namespace: string, cliDebugMode = false): Promise<boolean> {
+async function publish(
+    collectionType: string,
+    basePath: string,
+    ociRegistry: string,
+    namespace: string,
+    cliDebugMode = false
+): Promise<{ [featureId: string]: [string] } | undefined> {
     // Ensures we have the devcontainer CLI installed.
     if (!(await ensureDevcontainerCliPresent(cliDebugMode))) {
         core.setFailed('Failed to install devcontainer CLI');
-        return false;
+        return;
     }
 
     try {
@@ -97,10 +127,11 @@ async function publish(collectionType: string, basePath: string, ociRegistry: st
 
         // Fails on non-zero exit code from the invoked process
         const res = await exec.getExecOutput(cmd, args, {});
-        return res.exitCode === 0;
+        const result = JSON.parse(res.stdout);
+        return result;
     } catch (err: any) {
         core.setFailed(err?.message);
-        return false;
+        return;
     }
 }
 

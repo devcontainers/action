@@ -51,6 +51,36 @@ export async function isDevcontainerCliAvailable(cliDebugMode = false): Promise<
     }
 }
 
+export async function addRepoTagForPublishedTag(type: string, id: string, version: string): Promise<boolean> {
+    const octokit = github.getOctokit(process.env.GITHUB_TOKEN || '');
+    const tag = `${type}_${id}_v${version}`;
+    core.info(`Adding repo tag '${tag}'...`);
+
+    try {
+        await octokit.rest.git.createRef({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            ref: `refs/tags/${tag}`,
+            sha: github.context.sha
+        });
+
+        await octokit.rest.git.createTag({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            tag,
+            message: `${tag}`,
+            object: github.context.sha,
+            type: 'commit'
+        });
+    } catch (err) {
+        core.error(`Failed to add tag '${tag}' to repo: ${err}`);
+        return false;
+    }
+
+    core.info(`Tag '${tag}' added.`);
+    return true;
+}
+
 export async function ensureDevcontainerCliPresent(cliDebugMode = false): Promise<boolean> {
     if (await isDevcontainerCliAvailable(cliDebugMode)) {
         core.info('devcontainer CLI is already installed');
