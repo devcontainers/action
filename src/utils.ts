@@ -53,7 +53,7 @@ export async function isDevcontainerCliAvailable(cliDebugMode = false): Promise<
 
 export async function addRepoTagForPublishedTag(type: string, id: string, version: string): Promise<boolean> {
     const octokit = github.getOctokit(process.env.GITHUB_TOKEN || '');
-    const tag = `${type}_${id}_v${version}`;
+    const tag = `${type}_${id}_${version}`;
     core.info(`Adding repo tag '${tag}'...`);
 
     try {
