@@ -83,7 +83,6 @@ export async function addRepoTagForPublishedTag(type: string, id: string, versio
 
 export async function ensureDevcontainerCliPresent(cliDebugMode = false): Promise<boolean> {
     if (await isDevcontainerCliAvailable(cliDebugMode)) {
-        core.info('devcontainer CLI is already installed');
         return true;
     }
 
@@ -92,14 +91,24 @@ export async function ensureDevcontainerCliPresent(cliDebugMode = false): Promis
         return false;
     }
 
+    // Unless this override is set,
+    // we'll fetch the latest version of the CLI published to NPM
+    const cliVersion = core.getInput('devcontainer-cli-version');
+    let cli = '@devcontainers/cli';
+    if (cliVersion) {
+        core.info(`Manually overriding CLI version to '${cliVersion}'`);
+        cli = `${cli}@${cliVersion}`;
+    }
+
     try {
         core.info('Fetching the latest @devcontainer/cli...');
-        const res = await exec.getExecOutput('npm', ['install', '-g', '@devcontainers/cli'], {
+        const res = await exec.getExecOutput('npm', ['install', '-g', cli], {
             ignoreReturnCode: true,
             silent: true
         });
         return res.exitCode === 0;
     } catch (err) {
+        core.error(`Failed to fetch @devcontainer/cli:  ${err}`);
         return false;
     }
 }
