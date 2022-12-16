@@ -9,6 +9,11 @@ export interface GitHubMetadata {
     sha?: string;
 }
 
+export interface PublishResult {
+    publishedVersions: string[];
+    digest:            string;
+    version:           string;
+}
 export interface DevContainerCollectionMetadata {
     sourceInformation: GitHubMetadata;
     features: Feature[];
