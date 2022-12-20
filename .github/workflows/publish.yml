@@ -18,8 +18,8 @@ jobs:
         with:
           node-version: 16.x
 
-      # - name: Update Schemas
-      #   run: yarn fetch-schemas
+      - name: Update Schemas
+        run: yarn fetch-schemas
 
       - name: Install dependencies
         run: rm -rf node_modules && yarn
