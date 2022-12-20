@@ -7,13 +7,13 @@ import * as path from 'path';
 
 import { promisify } from 'util';
 import { GitHubMetadata } from './contracts/collection';
-import devContainerFeatureSchema from "./schemas/devContainerFeature.schema.json"
-
+import devContainerFeatureSchema from './schemas/devContainerFeature.schema.json';
 
 export const readLocalFile = promisify(fs.readFile);
 export const writeLocalFile = promisify(fs.writeFile);
 export const mkdirLocal = promisify(fs.mkdir);
 export const renameLocal = promisify(fs.rename);
+export const readdirLocal = promisify(fs.readdir);
 
 export function getGitHubMetadata() {
     // Insert github repo metadata
@@ -77,7 +77,6 @@ export async function ensureDevcontainerCliPresent(cliDebugMode = false): Promis
 }
 
 export async function validateFeatureSchema(pathToAFeatureDir: string): Promise<boolean> {
-
     const ajv = new Ajv();
     ajv.addSchema(devContainerFeatureSchema);
     const validate = ajv.compile(devContainerFeatureSchema);
@@ -92,10 +91,9 @@ export async function validateFeatureSchema(pathToAFeatureDir: string): Promise<
 
     const featureJson = await readLocalFile(devContainerFeaturePath, 'utf8');
 
-
     const isValid = validate(JSON.parse(featureJson));
     if (!isValid) {
-        core.setFailed(`(!) ERR: '${devContainerFeaturePath}' is not valid:`);
+        core.error(`(!) ERR: '${devContainerFeaturePath}' is not valid:`);
 
         const output = JSON.stringify(validate.errors, undefined, 4);
         core.info(output);
