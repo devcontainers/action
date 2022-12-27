@@ -56,7 +56,7 @@ async function run(): Promise<void> {
     if (shouldPublishFeatures) {
         core.info('Validating Feature metadata...');
         if (!(await prePublish('feature', featuresBasePath))) {
-            core.setFailed('(!) Failed to validate contents of Features.');
+            core.setFailed('(!) Failed to validate Feature metadata.');
             return;
         }
 
