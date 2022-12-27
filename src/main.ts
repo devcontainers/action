@@ -42,7 +42,7 @@ async function run(): Promise<void> {
     const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
 
     const disableSchemaValidationAsError = core.getInput('disable-schema-validation').toLowerCase() === 'true';
-    const validateOnly = core.getInput('validate-features-only').toLowerCase() === 'true';
+    const validateOnly = core.getInput('validate-only').toLowerCase() === 'true';
 
     // -- Publish
 
