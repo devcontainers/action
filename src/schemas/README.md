@@ -1,6 +1,6 @@
 # Schemas
 
-Schemas can be updated by running `yarn update-schemas` from the root of the project. 
+Schemas can be updated by running `yarn fetch-schemas` from the root of the project. 
 
 The following schemas are synced:
 
