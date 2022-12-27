@@ -4,9 +4,11 @@
  *-------------------------------------------------------------------------------------------------------------*/
 
 import * as core from '@actions/core';
-import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
-import { ensureDevcontainerCliPresent, getGitHubMetadata } from './utils';
 import * as exec from '@actions/exec';
+import * as path from 'path';
+
+import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
+import { ensureDevcontainerCliPresent, getGitHubMetadata, readdirLocal, validateFeatureSchema } from './utils';
 
 async function run(): Promise<void> {
     core.debug('Reading input parameters...');
@@ -52,6 +54,12 @@ async function run(): Promise<void> {
     }
 
     if (shouldPublishFeatures) {
+        core.info('Validating Feature metadata...');
+        if (!(await prePublish('feature', featuresBasePath))) {
+            core.setFailed('(!) Failed to validate Feature metadata.');
+            return;
+        }
+
         core.info('Publishing features...');
         if (!(await publish('feature', featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode))) {
             core.setFailed('(!) Failed to publish features.');
@@ -80,7 +88,31 @@ async function run(): Promise<void> {
     }
 }
 
-async function publish(collectionType: string, basePath: string, ociRegistry: string, namespace: string, cliDebugMode = false): Promise<boolean> {
+async function prePublish(collectionType: 'feature' | 'template', basePath: string): Promise<boolean> {
+    // Iterate each (Feature|Template) in 'basePath'
+    for (const folder of await readdirLocal(basePath)) {
+        const pathToArtifact = path.join(basePath, folder);
+
+        if (collectionType === 'feature') {
+            if (!(await validateFeatureSchema(pathToArtifact))) {
+                return false;
+            }
+        }
+
+        // if (collectionType == 'template') { }
+    }
+
+    // Validate never failed
+    return true;
+}
+
+async function publish(
+    collectionType: 'feature' | 'template',
+    basePath: string,
+    ociRegistry: string,
+    namespace: string,
+    cliDebugMode = false
+): Promise<boolean> {
     // Ensures we have the devcontainer CLI installed.
     if (!(await ensureDevcontainerCliPresent(cliDebugMode))) {
         core.setFailed('Failed to install devcontainer CLI');

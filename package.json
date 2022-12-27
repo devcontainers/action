@@ -8,7 +8,9 @@
     "format": "prettier --write '**/*.ts'",
     "format-check": "prettier --check '**/*.ts'",
     "build": "ncc build ./src/main.ts",
-    "test": "jest"
+    "test": "jest",
+    "fetch-schemas": "wget https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainerFeature.schema.json -O src/schemas/devContainerFeature.schema.json"
+
   },
   "repository": {
     "type": "git",
@@ -28,9 +30,11 @@
     "@actions/core": "^1.9.1",
     "@actions/exec": "^1.1.1",
     "@actions/github": "^5.1.1",
+    "ajv": "^8.11.2",
     "jsonc-parser": "^3.1.0"
   },
   "devDependencies": {
+    "@types/ajv": "^1.0.0",
     "@types/node": "^16.11.6",
     "@vercel/ncc": "^0.34.0",
     "copyfiles": "^2.4.1",

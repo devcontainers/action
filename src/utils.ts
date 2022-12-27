@@ -1,17 +1,19 @@
 import * as github from '@actions/github';
 import * as fs from 'fs';
-import { promisify } from 'util';
-import { GitHubMetadata } from './contracts/collection';
-import * as cp from 'child_process';
-import { Template } from './contracts/templates';
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
+import Ajv from 'ajv';
 import * as path from 'path';
+
+import { promisify } from 'util';
+import { GitHubMetadata } from './contracts/collection';
+import devContainerFeatureSchema from './schemas/devContainerFeature.schema.json';
 
 export const readLocalFile = promisify(fs.readFile);
 export const writeLocalFile = promisify(fs.writeFile);
 export const mkdirLocal = promisify(fs.mkdir);
 export const renameLocal = promisify(fs.rename);
+export const readdirLocal = promisify(fs.readdir);
 
 export function getGitHubMetadata() {
     // Insert github repo metadata
@@ -72,4 +74,32 @@ export async function ensureDevcontainerCliPresent(cliDebugMode = false): Promis
     } catch (err) {
         return false;
     }
+}
+
+export async function validateFeatureSchema(pathToAFeatureDir: string): Promise<boolean> {
+    const ajv = new Ajv();
+    ajv.addSchema(devContainerFeatureSchema);
+    const validate = ajv.compile(devContainerFeatureSchema);
+
+    const devContainerFeaturePath = path.join(pathToAFeatureDir, 'devcontainer-feature.json');
+
+    // Read this Feature's devcontainer-feature.json
+    if (!fs.existsSync(devContainerFeaturePath)) {
+        core.error(`(!) ERR: devcontainer-feature.json not found at path '${devContainerFeaturePath}'.`);
+        return false;
+    }
+
+    const featureJson = await readLocalFile(devContainerFeaturePath, 'utf8');
+
+    const isValid = validate(JSON.parse(featureJson));
+    if (!isValid) {
+        core.error(`(!) ERR: '${devContainerFeaturePath}' is not valid:`);
+
+        const output = JSON.stringify(validate.errors, undefined, 4);
+        core.info(output);
+        return false;
+    }
+
+    // No parse errors.
+    return true;
 }
