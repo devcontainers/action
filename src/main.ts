@@ -41,6 +41,8 @@ async function run(): Promise<void> {
 
     const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
 
+    const disableSchemaValidationAsError = core.getInput('disable-schema-validation').toLowerCase() === 'true';
+
     // -- Publish
 
     if (shouldPublishFeatures && shouldPublishTemplates) {
@@ -56,8 +58,13 @@ async function run(): Promise<void> {
     if (shouldPublishFeatures) {
         core.info('Validating Feature metadata...');
         if (!(await prePublish('feature', featuresBasePath))) {
-            core.setFailed('(!) Failed to validate Feature metadata.');
-            return;
+
+            if (disableSchemaValidationAsError) {
+                core.warning('Failed to validate Feature metadata. NOTE: This warning will be a fatal error in future releases.')
+            } else {
+                core.setFailed('(!) Failed to validate Feature metadata.');
+                return;
+            }
         }
 
         core.info('Publishing features...');

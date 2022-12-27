@@ -11,6 +11,11 @@ inputs:
     description: >-
       Parse machine-readable (.json) configuration files and commit standardized
       documentation
+  disable-schema-validation:
+    required: false
+    default: 'false'
+    description: >-
+      Disables validation of the schema of metadata files (devcontainer-feature.json)
   # Feature specific inputs
   publish-features:
     required: false
