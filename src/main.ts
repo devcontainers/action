@@ -42,6 +42,7 @@ async function run(): Promise<void> {
     const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
 
     const disableSchemaValidationAsError = core.getInput('disable-schema-validation').toLowerCase() === 'true';
+    const validateOnly = core.getInput('validate-only').toLowerCase() === 'true';
 
     // -- Publish
 
@@ -50,12 +51,17 @@ async function run(): Promise<void> {
         return;
     }
 
+    if ((shouldPublishFeatures && validateOnly) || (shouldPublishTemplates && validateOnly)) {
+        core.setFailed('(!) publishing steps and "validateOnly" are mutually exclusive.');
+        return;
+    }
+
     if (shouldGenerateDocumentation && featuresBasePath && templatesBasePath) {
         core.setFailed('(!) Features and Templates should exist in different repositories.');
         return;
     }
 
-    if (shouldPublishFeatures) {
+    if (shouldPublishFeatures || validateOnly) {
         core.info('Validating Feature metadata...');
         if (!(await prePublish('feature', featuresBasePath))) {
 
@@ -66,7 +72,9 @@ async function run(): Promise<void> {
                 return;
             }
         }
+    }
 
+    if (shouldPublishFeatures) {
         core.info('Publishing features...');
         if (!(await publish('feature', featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode))) {
             core.setFailed('(!) Failed to publish features.');
@@ -96,21 +104,22 @@ async function run(): Promise<void> {
 }
 
 async function prePublish(collectionType: 'feature' | 'template', basePath: string): Promise<boolean> {
+    let hasFailed = false;
+
     // Iterate each (Feature|Template) in 'basePath'
     for (const folder of await readdirLocal(basePath)) {
         const pathToArtifact = path.join(basePath, folder);
 
         if (collectionType === 'feature') {
-            if (!(await validateFeatureSchema(pathToArtifact))) {
-                return false;
+            if (!await validateFeatureSchema(pathToArtifact)) {
+                hasFailed = true;
             }
         }
 
         // if (collectionType == 'template') { }
     }
 
-    // Validate never failed
-    return true;
+    return !hasFailed;
 }
 
 async function publish(
