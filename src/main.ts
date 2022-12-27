@@ -53,6 +53,7 @@ async function run(): Promise<void> {
 
     if ((shouldPublishFeatures && validateOnly) || (shouldPublishTemplates && validateOnly)) {
         core.setFailed('(!) publishing steps and "validateOnly" are mutually exclusive.');
+        return;
     }
 
     if (shouldGenerateDocumentation && featuresBasePath && templatesBasePath) {
