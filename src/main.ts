@@ -104,21 +104,22 @@ async function run(): Promise<void> {
 }
 
 async function prePublish(collectionType: 'feature' | 'template', basePath: string): Promise<boolean> {
+    let hasFailed = false;
+
     // Iterate each (Feature|Template) in 'basePath'
     for (const folder of await readdirLocal(basePath)) {
         const pathToArtifact = path.join(basePath, folder);
 
         if (collectionType === 'feature') {
-            if (!(await validateFeatureSchema(pathToArtifact))) {
-                return false;
+            if (!await validateFeatureSchema(pathToArtifact)) {
+                hasFailed = true;
             }
         }
 
         // if (collectionType == 'template') { }
     }
 
-    // Validate never failed
-    return true;
+    return !hasFailed;
 }
 
 async function publish(
