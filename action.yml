@@ -16,6 +16,12 @@ inputs:
     default: 'false'
     description: >-
       Disables validation of the schema of metadata files (devcontainer-feature.json)
+  validate-only:
+    required: false
+    default: 'false'
+    description: >-
+      Validate the schema of metadata files (devcontainer-feature.json)
+      and exit without publishing. (Cannot be combined with any publishing step).
   # Feature specific inputs
   publish-features:
     required: false

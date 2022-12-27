@@ -42,6 +42,7 @@ async function run(): Promise<void> {
     const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
 
     const disableSchemaValidationAsError = core.getInput('disable-schema-validation').toLowerCase() === 'true';
+    const validateOnly = core.getInput('validate-features-only').toLowerCase() === 'true';
 
     // -- Publish
 
@@ -50,12 +51,16 @@ async function run(): Promise<void> {
         return;
     }
 
+    if ((shouldPublishFeatures && validateOnly) || (shouldPublishTemplates && validateOnly)) {
+        core.setFailed('(!) publishing steps and "validateOnly" are mutually exclusive.');
+    }
+
     if (shouldGenerateDocumentation && featuresBasePath && templatesBasePath) {
         core.setFailed('(!) Features and Templates should exist in different repositories.');
         return;
     }
 
-    if (shouldPublishFeatures) {
+    if (shouldPublishFeatures || validateOnly) {
         core.info('Validating Feature metadata...');
         if (!(await prePublish('feature', featuresBasePath))) {
 
@@ -66,7 +71,9 @@ async function run(): Promise<void> {
                 return;
             }
         }
+    }
 
+    if (shouldPublishFeatures) {
         core.info('Publishing features...');
         if (!(await publish('feature', featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode))) {
             core.setFailed('(!) Failed to publish features.');
