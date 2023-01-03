@@ -2,13 +2,15 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Development Container Feature Metadata",
   "description": "Development Container Features Metadata (devcontainer-feature.json). See https://containers.dev/implementors/features/ for more information.",
-    "definitions": {
+  "definitions": {
     "Feature": {
       "additionalProperties": false,
       "properties": {
         "capAdd": {
-					"description": "Passes docker capabilities to include when creating the dev container.",
-					"examples": [ "SYS_PTRACE" ],
+          "description": "Passes docker capabilities to include when creating the dev container.",
+          "examples": [
+            "SYS_PTRACE"
+          ],
           "items": {
             "type": "string"
           },
@@ -89,6 +91,17 @@
         "version": {
           "description": "The version of the Feature. Follows the semanatic versioning (semver) specification.",
           "type": "string"
+        },
+        "legacyIds": {
+          "description": "Array of old IDs used to publish this Feature. The property is useful for renaming a currently published Feature within a single namespace.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "deprecated": {
+          "description": "Indicates that the Feature is deprecated, and will not receive any further updates/support. This property is intended to be used by the supporting tools for highlighting Feature deprecation.",
+          "type": "boolean"
         }
       },
       "required": [
@@ -180,7 +193,6 @@
           },
           "required": [
             "type",
-            "proposals",
             "default"
           ],
           "type": "object"
@@ -220,6 +232,6 @@
     {
       "type": "object",
       "$ref": "#/definitions/Feature"
-      }
+    }
   ]
 }
