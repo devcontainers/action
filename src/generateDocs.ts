@@ -4,6 +4,7 @@ import * as path from 'path';
 import { getGitHubMetadata } from './utils';
 
 const FEATURES_README_TEMPLATE = `
+#{Header}
 # #{Name}
 
 #{Description}
@@ -120,6 +121,23 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     urlToConfig = `https://github.com/${srcInfo.owner}/${srcInfo.repo}/blob/main/${basePathTrimmed}/${f}/${metadataFile}`;
                 }
 
+                let header = '';
+                const isDeprecated = parsedJson?.deprecated;
+                const hasLegacyIds = parsedJson?.legacyIds && parsedJson?.legacyIds.length > 0;
+
+                if (isDeprecated || hasLegacyIds) {
+                    header = '### **IMPORTANT NOTE**\n';
+
+                    if (isDeprecated) {
+                        header += `- **This Feature is deprecated, and will no longer receive any further updates/support.**\n`;
+                    }
+
+                    if (hasLegacyIds) {
+                        const formattedLegacyIds = parsedJson.legacyIds.map((legacyId: string) => `'${legacyId}'`);
+                        header += `- **Ids used to publish this Feature in the past - ${formattedLegacyIds.join(', ')}**\n`;
+                    }
+                }
+
                 const newReadme = readmeTemplate
                     // Templates & Features
                     .replace('#{Id}', parsedJson.id)
@@ -131,7 +149,8 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     // Features Only
                     .replace('#{Registry}', ociRegistry)
                     .replace('#{Namespace}', namespace)
-                    .replace('#{Version}', version);
+                    .replace('#{Version}', version)
+                    .replace('#{Header}', header);
 
                 // Remove previous readme
                 if (fs.existsSync(readmePath)) {
