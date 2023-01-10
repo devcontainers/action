@@ -4,7 +4,6 @@ import * as path from 'path';
 import { getGitHubMetadata } from './utils';
 
 const FEATURES_README_TEMPLATE = `
-#{Header}
 # #{Name}
 
 #{Description}
@@ -121,7 +120,7 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     urlToConfig = `https://github.com/${srcInfo.owner}/${srcInfo.repo}/blob/main/${basePathTrimmed}/${f}/${metadataFile}`;
                 }
 
-                let header = '';
+                let header;
                 const isDeprecated = parsedJson?.deprecated;
                 const hasLegacyIds = parsedJson?.legacyIds && parsedJson?.legacyIds.length > 0;
 
@@ -138,7 +137,7 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     }
                 }
 
-                const newReadme = readmeTemplate
+                let newReadme = readmeTemplate
                     // Templates & Features
                     .replace('#{Id}', parsedJson.id)
                     .replace('#{Name}', parsedJson.name ? `${parsedJson.name} (${parsedJson.id})` : `${parsedJson.id}`)
@@ -149,8 +148,11 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     // Features Only
                     .replace('#{Registry}', ociRegistry)
                     .replace('#{Namespace}', namespace)
-                    .replace('#{Version}', version)
-                    .replace('#{Header}', header);
+                    .replace('#{Version}', version);
+
+                if (header) {
+                    newReadme = header + newReadme;
+                }
 
                 // Remove previous readme
                 if (fs.existsSync(readmePath)) {
