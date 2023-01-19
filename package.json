@@ -31,7 +31,7 @@
     "@actions/exec": "^1.1.1",
     "@actions/github": "^5.1.1",
     "ajv": "^8.11.2",
-    "jsonc-parser": "^3.1.0"
+    "jsonc-parser": "^3.2.0"
   },
   "devDependencies": {
     "@types/ajv": "^1.0.0",
