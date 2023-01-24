@@ -45,6 +45,8 @@ async function run(): Promise<void> {
     const disableSchemaValidationAsError = core.getInput('disable-schema-validation').toLowerCase() === 'true';
     const validateOnly = core.getInput('validate-only').toLowerCase() === 'true';
 
+    const disableRepoTagging = core.getInput('disable-repo-tagging').toLowerCase() === 'true';
+
     // -- Publish
 
     if (shouldPublishFeatures && shouldPublishTemplates) {
@@ -84,14 +86,16 @@ async function run(): Promise<void> {
         }
 
         // Add repo tag for this version at the current commit.
-        for (const featureId in publishedFeatures) {
-            const version = publishedFeatures[featureId]?.version;
-            if (!version) {
-                core.debug(`No version available for '${featureId}', so no repo tag was added for Feature`);
-                continue;
-            }
-            if (!(await addRepoTagForPublishedTag('feature', featureId, version))) {
-                continue;
+        if (!disableRepoTagging) {
+            for (const featureId in publishedFeatures) {
+                const version = publishedFeatures[featureId]?.version;
+                if (!version) {
+                    core.debug(`No version available for '${featureId}', so no repo tag was added for Feature`);
+                    continue;
+                }
+                if (!(await addRepoTagForPublishedTag('feature', featureId, version))) {
+                    continue;
+                }
             }
         }
     }
@@ -105,14 +109,16 @@ async function run(): Promise<void> {
         }
 
         // Add repo tag for this version at the current commit.
-        for (const templateId in publishedTemplates) {
-            const version = publishedTemplates[templateId]?.version;
-            if (!version) {
-                core.debug(`No version available for '${templateId}', so no repo tag was added for Feature`);
-                continue;
-            }
-            if (!(await addRepoTagForPublishedTag('template', templateId, version))) {
-                continue;
+        if (!disableRepoTagging) {
+            for (const templateId in publishedTemplates) {
+                const version = publishedTemplates[templateId]?.version;
+                if (!version) {
+                    core.debug(`No version available for '${templateId}', so no repo tag was added for Feature`);
+                    continue;
+                }
+                if (!(await addRepoTagForPublishedTag('template', templateId, version))) {
+                    continue;
+                }
             }
         }
     }
