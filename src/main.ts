@@ -87,11 +87,10 @@ async function run(): Promise<void> {
         for (const featureId in publishedFeatures) {
             const version = publishedFeatures[featureId]?.version;
             if (!version) {
-                core.debug(`Repo tag not added for Feature '${featureId}'...`);
+                core.debug(`No version available for '${featureId}', so no repo tag was added for Feature`);
                 continue;
             }
             if (!(await addRepoTagForPublishedTag('feature', featureId, version))) {
-                core.setFailed('(!) Failed to add repo tag for Feature release.');
                 continue;
             }
         }
@@ -109,11 +108,10 @@ async function run(): Promise<void> {
         for (const templateId in publishedTemplates) {
             const version = publishedTemplates[templateId]?.version;
             if (!version) {
-                core.debug(`Repo tag not added for Feature '${templateId}'...`);
+                core.debug(`No version available for '${templateId}', so no repo tag was added for Feature`);
                 continue;
             }
             if (!(await addRepoTagForPublishedTag('template', templateId, version))) {
-                core.setFailed('(!) Failed to add repo tag for a Template release.');
                 continue;
             }
         }

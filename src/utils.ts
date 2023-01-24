@@ -75,7 +75,8 @@ export async function addRepoTagForPublishedTag(type: string, id: string, versio
             type: 'commit'
         });
     } catch (err) {
-        core.error(`Failed to add tag '${tag}' to repo: ${err}`);
+        core.warning(`Failed to automatically add repo tag, manually tag with:   'git tag ${tag} ${github.context.sha}'`);
+        core.debug(`${err}`);
         return false;
     }
 
