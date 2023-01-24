@@ -4,10 +4,12 @@
  *-------------------------------------------------------------------------------------------------------------*/
 
 import * as core from '@actions/core';
-import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
-import { addRepoTagForPublishedTag, ensureDevcontainerCliPresent, getGitHubMetadata } from './utils';
 import * as exec from '@actions/exec';
+import * as path from 'path';
+
 import { PublishResult } from './contracts/collection';
+import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
+import { addRepoTagForPublishedTag, ensureDevcontainerCliPresent, getGitHubMetadata, readdirLocal, validateFeatureSchema } from './utils';
 
 async function run(): Promise<void> {
     core.debug('Reading input parameters...');
@@ -40,6 +42,9 @@ async function run(): Promise<void> {
 
     const cliDebugMode = core.getInput('devcontainer-cli-debug-mode').toLowerCase() === 'true';
 
+    const disableSchemaValidationAsError = core.getInput('disable-schema-validation').toLowerCase() === 'true';
+    const validateOnly = core.getInput('validate-only').toLowerCase() === 'true';
+
     // -- Publish
 
     if (shouldPublishFeatures && shouldPublishTemplates) {
@@ -47,9 +52,27 @@ async function run(): Promise<void> {
         return;
     }
 
+    if ((shouldPublishFeatures && validateOnly) || (shouldPublishTemplates && validateOnly)) {
+        core.setFailed('(!) publishing steps and "validateOnly" are mutually exclusive.');
+        return;
+    }
+
     if (shouldGenerateDocumentation && featuresBasePath && templatesBasePath) {
         core.setFailed('(!) Features and Templates should exist in different repositories.');
         return;
+    }
+
+    if (shouldPublishFeatures || validateOnly) {
+        core.info('Validating Feature metadata...');
+        if (!(await prePublish('feature', featuresBasePath))) {
+
+            if (disableSchemaValidationAsError) {
+                core.warning('Failed to validate Feature metadata. NOTE: This warning will be a fatal error in future releases.')
+            } else {
+                core.setFailed('(!) Failed to validate Feature metadata.');
+                return;
+            }
+        }
     }
 
     if (shouldPublishFeatures) {
@@ -88,7 +111,7 @@ async function run(): Promise<void> {
             if (!version) {
                 core.debug(`Repo tag not added for Feature '${templateId}'...`);
                 continue;
-            }            
+            }
             if (!(await addRepoTagForPublishedTag('template', templateId, version))) {
                 core.setFailed('(!) Failed to add repo tag for a Template release.');
                 continue;
@@ -109,8 +132,27 @@ async function run(): Promise<void> {
     }
 }
 
+async function prePublish(collectionType: 'feature' | 'template', basePath: string): Promise<boolean> {
+    let hasFailed = false;
+
+    // Iterate each (Feature|Template) in 'basePath'
+    for (const folder of await readdirLocal(basePath)) {
+        const pathToArtifact = path.join(basePath, folder);
+
+        if (collectionType === 'feature') {
+            if (!await validateFeatureSchema(pathToArtifact)) {
+                hasFailed = true;
+            }
+        }
+
+        // if (collectionType == 'template') { }
+    }
+
+    return !hasFailed;
+}
+
 async function publish(
-    collectionType: string,
+    collectionType: 'feature' | 'template',
     basePath: string,
     ociRegistry: string,
     namespace: string,

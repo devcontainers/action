@@ -1,8 +1,7 @@
-name: Publish
+name: Test
 
 on:
-  release:
-    types: [published, edited]
+  pull_request:
 
 jobs:
   build:
@@ -10,11 +9,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.release.tag_name }}
-
+    
       - name: Set Node.js 16.x
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v2.5.1
         with:
           node-version: 16.x
 
@@ -26,10 +23,3 @@ jobs:
 
       - name: Run unit tests
         run: yarn test
-
-      - name: Build
-        run: yarn build
-
-      - uses: JasonEtco/build-and-tag-action@v2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}

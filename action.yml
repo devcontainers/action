@@ -11,6 +11,17 @@ inputs:
     description: >-
       Parse machine-readable (.json) configuration files and commit standardized
       documentation
+  disable-schema-validation:
+    required: false
+    default: 'false'
+    description: >-
+      Disables validation of the schema of metadata files (devcontainer-feature.json)
+  validate-only:
+    required: false
+    default: 'false'
+    description: >-
+      Validate the schema of metadata files (devcontainer-feature.json)
+      and exit without publishing. (Cannot be combined with any publishing step).
   # Feature specific inputs
   publish-features:
     required: false
@@ -54,5 +65,5 @@ inputs:
       Published Template IDs will be prefixed with the namespace.
       If omitted, this value will default to the source repo name
 runs:
-  using: node12
+  using: node16
   main: dist/index.js
