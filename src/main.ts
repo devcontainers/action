@@ -7,8 +7,9 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as path from 'path';
 
+import { PublishResult } from './contracts/collection';
 import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
-import { ensureDevcontainerCliPresent, getGitHubMetadata, readdirLocal, validateFeatureSchema } from './utils';
+import { addRepoTagForPublishedTag, ensureDevcontainerCliPresent, getGitHubMetadata, readdirLocal, validateFeatureSchema } from './utils';
 
 async function run(): Promise<void> {
     core.debug('Reading input parameters...');
@@ -44,6 +45,8 @@ async function run(): Promise<void> {
     const disableSchemaValidationAsError = core.getInput('disable-schema-validation').toLowerCase() === 'true';
     const validateOnly = core.getInput('validate-only').toLowerCase() === 'true';
 
+    const disableRepoTagging = core.getInput('disable-repo-tagging').toLowerCase() === 'true';
+
     // -- Publish
 
     if (shouldPublishFeatures && shouldPublishTemplates) {
@@ -75,30 +78,60 @@ async function run(): Promise<void> {
     }
 
     if (shouldPublishFeatures) {
-        core.info('Publishing features...');
-        if (!(await publish('feature', featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode))) {
-            core.setFailed('(!) Failed to publish features.');
+        core.info('Publishing Features...');
+        const publishedFeatures = await publish('feature', featuresBasePath, featuresOciRegistry, featuresNamespace, cliDebugMode);
+        if (!publishedFeatures) {
+            core.setFailed('(!) Failed to publish Features.');
             return;
+        }
+
+        // Add repo tag for this version at the current commit.
+        if (!disableRepoTagging) {
+            for (const featureId in publishedFeatures) {
+                const version = publishedFeatures[featureId]?.version;
+                if (!version) {
+                    core.debug(`No version available for '${featureId}', so no repo tag was added for Feature`);
+                    continue;
+                }
+                if (!(await addRepoTagForPublishedTag('feature', featureId, version))) {
+                    continue;
+                }
+            }
         }
     }
 
     if (shouldPublishTemplates) {
-        core.info('Publishing templates...');
-        if (!(await publish('template', templatesBasePath, templatesOciRegistry, templatesNamespace, cliDebugMode))) {
-            core.setFailed('(!) Failed to publish templates.');
+        core.info('Publishing Templates...');
+        const publishedTemplates = await publish('template', templatesBasePath, templatesOciRegistry, templatesNamespace, cliDebugMode);
+        if (!publishedTemplates) {
+            core.setFailed('(!) Failed to publish Templates.');
             return;
+        }
+
+        // Add repo tag for this version at the current commit.
+        if (!disableRepoTagging) {
+            for (const templateId in publishedTemplates) {
+                const version = publishedTemplates[templateId]?.version;
+                if (!version) {
+                    core.debug(`No version available for '${templateId}', so no repo tag was added for Feature`);
+                    continue;
+                }
+                if (!(await addRepoTagForPublishedTag('template', templateId, version))) {
+                    continue;
+                }
+            }
         }
     }
 
     // -- Generate Documentation
 
     if (shouldGenerateDocumentation && featuresBasePath) {
-        core.info('Generating documentation for features...');
+        core.info('Generating documentation for Features...');
         await generateFeaturesDocumentation(featuresBasePath, featuresOciRegistry, featuresNamespace);
     }
 
     if (shouldGenerateDocumentation && templatesBasePath) {
-        core.info('Generating documentation for templates...');
+        core.info('Generating documentation for Templates...');
         await generateTemplateDocumentation(templatesBasePath);
     }
 }
@@ -128,11 +161,11 @@ async function publish(
     ociRegistry: string,
     namespace: string,
     cliDebugMode = false
-): Promise<boolean> {
+): Promise<{ [featureId: string]: PublishResult } | undefined> {
     // Ensures we have the devcontainer CLI installed.
     if (!(await ensureDevcontainerCliPresent(cliDebugMode))) {
         core.setFailed('Failed to install devcontainer CLI');
-        return false;
+        return;
     }
 
     try {
@@ -145,10 +178,11 @@ async function publish(
 
         // Fails on non-zero exit code from the invoked process
         const res = await exec.getExecOutput(cmd, args, {});
-        return res.exitCode === 0;
+        const result: { [featureId: string]: PublishResult } = JSON.parse(res.stdout);
+        return result;
     } catch (err: any) {
         core.setFailed(err?.message);
-        return false;
+        return;
     }
 }
 

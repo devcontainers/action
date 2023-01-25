@@ -22,6 +22,11 @@ inputs:
     description: >-
       Validate the schema of metadata files (devcontainer-feature.json)
       and exit without publishing. (Cannot be combined with any publishing step).
+  disable-repo-tagging:
+    required: false
+    default: 'false'
+    description: >-
+      Disables adding a git repo tag for each Feature or Template release.
   # Feature specific inputs
   publish-features:
     required: false

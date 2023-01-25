@@ -53,9 +53,39 @@ export async function isDevcontainerCliAvailable(cliDebugMode = false): Promise<
     }
 }
 
+export async function addRepoTagForPublishedTag(type: string, id: string, version: string): Promise<boolean> {
+    const octokit = github.getOctokit(process.env.GITHUB_TOKEN || '');
+    const tag = `${type}_${id}_${version}`;
+    core.info(`Adding repo tag '${tag}'...`);
+
+    try {
+        await octokit.rest.git.createRef({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            ref: `refs/tags/${tag}`,
+            sha: github.context.sha
+        });
+
+        await octokit.rest.git.createTag({
+            owner: github.context.repo.owner,
+            repo: github.context.repo.repo,
+            tag,
+            message: `${tag}`,
+            object: github.context.sha,
+            type: 'commit'
+        });
+    } catch (err) {
+        core.warning(`Failed to automatically add repo tag, manually tag with:   'git tag ${tag} ${github.context.sha}'`);
+        core.debug(`${err}`);
+        return false;
+    }
+
+    core.info(`Tag '${tag}' added.`);
+    return true;
+}
+
 export async function ensureDevcontainerCliPresent(cliDebugMode = false): Promise<boolean> {
     if (await isDevcontainerCliAvailable(cliDebugMode)) {
-        core.info('devcontainer CLI is already installed');
         return true;
     }
 
@@ -64,14 +94,24 @@ export async function ensureDevcontainerCliPresent(cliDebugMode = false): Promis
         return false;
     }
 
+    // Unless this override is set,
+    // we'll fetch the latest version of the CLI published to NPM
+    const cliVersion = core.getInput('devcontainer-cli-version');
+    let cli = '@devcontainers/cli';
+    if (cliVersion) {
+        core.info(`Manually overriding CLI version to '${cliVersion}'`);
+        cli = `${cli}@${cliVersion}`;
+    }
+
     try {
         core.info('Fetching the latest @devcontainer/cli...');
-        const res = await exec.getExecOutput('npm', ['install', '-g', '@devcontainers/cli'], {
+        const res = await exec.getExecOutput('npm', ['install', '-g', cli], {
             ignoreReturnCode: true,
             silent: true
         });
         return res.exitCode === 0;
     } catch (err) {
+        core.error(`Failed to fetch @devcontainer/cli:  ${err}`);
         return false;
     }
 }
