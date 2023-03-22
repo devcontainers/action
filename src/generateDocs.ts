@@ -39,15 +39,15 @@ const TEMPLATE_README_TEMPLATE = `
 _Note: This file was auto-generated from the [devcontainer-template.json](#{RepoUrl}).  Add additional notes to a \`NOTES.md\`._
 `;
 
-export async function generateFeaturesDocumentation(basePath: string, ociRegistry: string, namespace: string) {
-    await _generateDocumentation(basePath, FEATURES_README_TEMPLATE, 'devcontainer-feature.json', ociRegistry, namespace);
+export async function generateFeaturesDocumentation(basePath: string, ociRegistry: string, namespace: string, defaultBranch: string) {
+    await _generateDocumentation(basePath, FEATURES_README_TEMPLATE, 'devcontainer-feature.json', defaultBranch, ociRegistry, namespace);
 }
 
-export async function generateTemplateDocumentation(basePath: string) {
-    await _generateDocumentation(basePath, TEMPLATE_README_TEMPLATE, 'devcontainer-template.json');
+export async function generateTemplateDocumentation(basePath: string, defaultBranch: string) {
+    await _generateDocumentation(basePath, TEMPLATE_README_TEMPLATE, 'devcontainer-template.json', defaultBranch);
 }
 
-async function _generateDocumentation(basePath: string, readmeTemplate: string, metadataFile: string, ociRegistry: string = '', namespace: string = '') {
+async function _generateDocumentation(basePath: string, readmeTemplate: string, metadataFile: string, defaultBranch: string, ociRegistry: string = '', namespace: string = '') {
     const directories = fs.readdirSync(basePath);
 
     await Promise.all(
@@ -117,7 +117,7 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                 let urlToConfig = `${metadataFile}`;
                 const basePathTrimmed = basePath.startsWith('./') ? basePath.substring(2) : basePath;
                 if (srcInfo.owner && srcInfo.repo) {
-                    urlToConfig = `https://github.com/${srcInfo.owner}/${srcInfo.repo}/blob/main/${basePathTrimmed}/${f}/${metadataFile}`;
+                    urlToConfig = `https://github.com/${srcInfo.owner}/${srcInfo.repo}/blob/${defaultBranch}/${basePathTrimmed}/${f}/${metadataFile}`;
                 }
 
                 let header;
