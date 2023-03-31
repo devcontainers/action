@@ -93,9 +93,7 @@ async function run(): Promise<void> {
                     core.debug(`No version available for '${featureId}', so no repo tag was added for Feature`);
                     continue;
                 }
-                if (!(await addRepoTagForPublishedTag('feature', featureId, version))) {
-                    continue;
-                }
+                await addRepoTagForPublishedTag('feature', featureId, version);
             }
         }
     }
@@ -116,9 +114,7 @@ async function run(): Promise<void> {
                     core.debug(`No version available for '${templateId}', so no repo tag was added for Feature`);
                     continue;
                 }
-                if (!(await addRepoTagForPublishedTag('template', templateId, version))) {
-                    continue;
-                }
+                await addRepoTagForPublishedTag('template', templateId, version);
             }
         }
     }
