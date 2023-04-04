@@ -85,15 +85,22 @@ async function run(): Promise<void> {
             return;
         }
 
-        // Add repo tag for this version at the current commit.
+        // Add repo tag for newly published Feature(s) at the current commit.
         if (!disableRepoTagging) {
-            for (const featureId in publishedFeatures) {
-                const version = publishedFeatures[featureId]?.version;
-                if (!version) {
-                    core.debug(`No version available for '${featureId}', so no repo tag was added for Feature`);
-                    continue;
+            const authToken = process.env.GITHUB_TOKEN;
+            if (!authToken) {
+                core.warning(`Repo tagging will be skipped because a 'GITHUB_TOKEN' is not set on this action.`);
+            } else {
+                // Add the repo tags
+                for (const featureId in publishedFeatures) {
+                    const version = publishedFeatures[featureId]?.version;
+                    if (!version) {
+                        core.debug(`No version available for '${featureId}', so no repo tag was added for Feature`);
+                        continue;
+                    }
+
+                    await addRepoTagForPublishedTag('feature', featureId, version, authToken);
                 }
-                await addRepoTagForPublishedTag('feature', featureId, version);
             }
         }
     }
@@ -106,15 +113,22 @@ async function run(): Promise<void> {
             return;
         }
 
-        // Add repo tag for this version at the current commit.
+        // Add repo tag for newly published Template(s) at the current commit.
         if (!disableRepoTagging) {
-            for (const templateId in publishedTemplates) {
-                const version = publishedTemplates[templateId]?.version;
-                if (!version) {
-                    core.debug(`No version available for '${templateId}', so no repo tag was added for Feature`);
-                    continue;
+            const authToken = process.env.GITHUB_TOKEN;
+            if (!authToken) {
+                core.warning(`Repo tagging will be skipped because a 'GITHUB_TOKEN' is not set on this action.`);
+            } else {
+                // Add the repo tags
+                for (const templateId in publishedTemplates) {
+                    const version = publishedTemplates[templateId]?.version;
+                    if (!version) {
+                        core.debug(`No version available for '${templateId}', so no repo tag was added for Feature`);
+                        continue;
+                    }
+
+                    await addRepoTagForPublishedTag('template', templateId, version, authToken);
                 }
-                await addRepoTagForPublishedTag('template', templateId, version);
             }
         }
     }
