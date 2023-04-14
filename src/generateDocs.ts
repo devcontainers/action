@@ -17,7 +17,7 @@ const FEATURES_README_TEMPLATE = `
 \`\`\`
 
 #{OptionsTable}
-
+#{Customizations}
 #{Notes}
 
 ---
@@ -137,6 +137,14 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     }
                 }
 
+                let extensions = '';
+                if (parsedJson?.customizations?.vscode?.extensions) {
+                    const extensionsList = parsedJson.customizations.vscode.extensions;
+                    if (extensionsList && extensionsList.length > 0) {
+                        extensions = '\n## Customizations\n\n### VS Code Extensions\n\n' + extensionsList.map((ext: string) => `- \`${ext}\``).join('\n') +'\n';
+                    }
+                }
+
                 let newReadme = readmeTemplate
                     // Templates & Features
                     .replace('#{Id}', parsedJson.id)
@@ -148,7 +156,8 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                     // Features Only
                     .replace('#{Registry}', ociRegistry)
                     .replace('#{Namespace}', namespace)
-                    .replace('#{Version}', version);
+                    .replace('#{Version}', version)
+                    .replace('#{Customizations}', extensions);
 
                 if (header) {
                     newReadme = header + newReadme;
