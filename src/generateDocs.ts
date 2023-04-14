@@ -141,7 +141,7 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                 if (parsedJson?.customizations?.vscode?.extensions) {
                     const extensionsList = parsedJson.customizations.vscode.extensions;
                     if (extensionsList && extensionsList.length > 0) {
-                        extensions = '\n## Customizations\n\n### VS Code\n\n' + extensionsList.map((ext: string) => `- ${ext}`).join('\n') +'\n';
+                        extensions = '\n## Customizations\n\n### VS Code Extensions\n\n' + extensionsList.map((ext: string) => `- ${ext}`).join('\n') +'\n';
                     }
                 }
 
