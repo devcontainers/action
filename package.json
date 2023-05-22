@@ -38,7 +38,7 @@
     "@types/node": "^18.11.18",
     "@vercel/ncc": "^0.34.0",
     "copyfiles": "^2.4.1",
-    "eslint": "^8.32.0",
+    "eslint": "^8.41.0",
     "glob": "^8.0.3",
     "handlebars": "^4.7.7",
     "jest": "^28.1.3",
