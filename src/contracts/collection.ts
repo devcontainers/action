@@ -10,7 +10,7 @@ export interface GitHubMetadata {
 }
 
 export interface PublishResult {
-    publishedVersions: string[];
+    publishedTags: string[];
     digest:            string;
     version:           string;
 }
