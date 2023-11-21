@@ -27,6 +27,11 @@ inputs:
     default: 'false'
     description: >-
       Disables adding a git repo tag for each Feature or Template release.
+  devcontainer-cli-version:
+    required: false
+    default: ''
+    description: >-
+      Override the version of the devcontainer CLI to use. Defaults to the latest published version.
   # Feature specific inputs
   publish-features:
     required: false

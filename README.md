@@ -23,6 +23,21 @@ See the [action.yml](https://github.com/devcontainers/action/blob/main/action.ym
 
 To best get started, create your own repo from the [`devcontainers/feature-starter`](https://github.com/devcontainers/feature-starter) or  [`devcontainers/template-starter`](https://github.com/devcontainers/template-starter) repos, customize the provided examples, and trigger the `release.yaml` workflow.
 
+### Pinning `devcontainer` CLI version
+
+This action heavily relies on the [devcontainers/cli](https://github.com/devcontainers/cli) for various operations.  By default, this action will fetch the latest version published to [npm](https://www.npmjs.com/package/@devcontainers/cli).  The `devcontainer-cli-version` property can be used to pin to a specific CLI release. Eg:
+
+```yaml
+- name: "Publish Features"
+uses: devcontainers/action@v1
+with:
+    publish-features: "true"
+    base-path-to-features: "./src"
+    devcontainer-cli-version: "0.53.0"
+```
+
+The changelog for the CLI can always be found here: https://github.com/devcontainers/cli/blob/main/CHANGELOG.md
+
 ## Design
 
 Internally, this GitHub Action will fetch the latest published version of the [Dev Container CLI](https://github.com/devcontainers/cli) and execute the appropriate CLI commands - namely `devcontainer features publish` and `devcontainer templates publish`.   
