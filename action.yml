@@ -75,5 +75,5 @@ inputs:
       Published Template IDs will be prefixed with the namespace.
       If omitted, this value will default to the source repo name
 runs:
-  using: node16
+  using: node20
   main: dist/index.js
