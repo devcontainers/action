@@ -29,8 +29,8 @@ This action heavily relies on the [devcontainers/cli](https://github.com/devcont
 
 ```yaml
 - name: "Publish Features"
-uses: devcontainers/action@v1
-with:
+  uses: devcontainers/action@v1
+  with:
     publish-features: "true"
     base-path-to-features: "./src"
     devcontainer-cli-version: "0.53.0"
