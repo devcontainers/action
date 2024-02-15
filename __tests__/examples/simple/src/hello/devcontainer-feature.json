@@ -1,7 +1,13 @@
+// comment out of the object
 {
+    // single line comment
     "name": "Hello, World!",
-    "id": "hello",
-    "version": "1.0.2",
+    /*
+        multi line comment
+        你好世界
+    */
+    "id": "hello", // comment at end
+    "version": /* inline comment */ "1.0.2",
     "description": "A hello world feature",
     "options": {
         "greeting": {
