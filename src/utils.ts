@@ -4,6 +4,7 @@ import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import Ajv from 'ajv';
 import * as path from 'path';
+import JSON from 'json5';
 
 import { promisify } from 'util';
 import { GitHubMetadata } from './contracts/collection';

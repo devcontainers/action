@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as core from '@actions/core';
 import * as path from 'path';
+import JSON from 'json5';
 import { getGitHubMetadata } from './utils';
 
 const FEATURES_README_TEMPLATE = `
@@ -141,7 +142,8 @@ async function _generateDocumentation(basePath: string, readmeTemplate: string, 
                 if (parsedJson?.customizations?.vscode?.extensions) {
                     const extensionsList = parsedJson.customizations.vscode.extensions;
                     if (extensionsList && extensionsList.length > 0) {
-                        extensions = '\n## Customizations\n\n### VS Code Extensions\n\n' + extensionsList.map((ext: string) => `- \`${ext}\``).join('\n') +'\n';
+                        extensions =
+                            '\n## Customizations\n\n### VS Code Extensions\n\n' + extensionsList.map((ext: string) => `- \`${ext}\``).join('\n') + '\n';
                     }
                 }
 

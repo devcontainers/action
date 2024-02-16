@@ -11,8 +11,8 @@ export interface GitHubMetadata {
 
 export interface PublishResult {
     publishedTags: string[];
-    digest:            string;
-    version:           string;
+    digest: string;
+    version: string;
 }
 export interface DevContainerCollectionMetadata {
     sourceInformation: GitHubMetadata;

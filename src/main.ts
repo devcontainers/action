@@ -6,6 +6,7 @@
 import * as core from '@actions/core';
 import * as exec from '@actions/exec';
 import * as path from 'path';
+import JSON from 'json5';
 
 import { PublishResult } from './contracts/collection';
 import { generateFeaturesDocumentation, generateTemplateDocumentation } from './generateDocs';
@@ -67,9 +68,8 @@ async function run(): Promise<void> {
     if (shouldPublishFeatures || validateOnly) {
         core.info('Validating Feature metadata...');
         if (!(await prePublish('feature', featuresBasePath))) {
-
             if (disableSchemaValidationAsError) {
-                core.warning('Failed to validate Feature metadata. NOTE: This warning will be a fatal error in future releases.')
+                core.warning('Failed to validate Feature metadata. NOTE: This warning will be a fatal error in future releases.');
             } else {
                 core.setFailed('(!) Failed to validate Feature metadata.');
                 return;
@@ -144,7 +144,7 @@ async function prePublish(collectionType: 'feature' | 'template', basePath: stri
         const pathToArtifact = path.join(basePath, folder);
 
         if (collectionType === 'feature') {
-            if (!await validateFeatureSchema(pathToArtifact)) {
+            if (!(await validateFeatureSchema(pathToArtifact))) {
                 hasFailed = true;
             }
         }
