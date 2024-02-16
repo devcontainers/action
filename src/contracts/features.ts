@@ -15,7 +15,7 @@ export interface Feature {
     licenseURL?: string;
     options?: Record<string, IOption>;
     containerEnv?: Record<string, string>;
-    mounts?: Mount[];
+    mounts?: (Mount|string)[];
     init?: boolean;
     privileged?: boolean;
     capAdd?: string[];
