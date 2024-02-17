@@ -54,8 +54,8 @@ export async function isDevcontainerCliAvailable(cliDebugMode = false): Promise<
     }
 }
 
-export async function addRepoTagForPublishedTag(type: string, id: string, version: string): Promise<boolean> {
-    const octokit = github.getOctokit(process.env.GITHUB_TOKEN || '');
+export async function addRepoTagForPublishedTag(type: string, id: string, version: string, authToken: string): Promise<void> {
+    const octokit = github.getOctokit(authToken);
     const tag = `${type}_${id}_${version}`;
     core.info(`Adding repo tag '${tag}'...`);
 
@@ -78,11 +78,9 @@ export async function addRepoTagForPublishedTag(type: string, id: string, versio
     } catch (err) {
         core.warning(`Failed to automatically add repo tag, manually tag with:   'git tag ${tag} ${github.context.sha}'`);
         core.debug(`${err}`);
-        return false;
     }
 
     core.info(`Tag '${tag}' added.`);
-    return true;
 }
 
 export async function ensureDevcontainerCliPresent(cliDebugMode = false): Promise<boolean> {
