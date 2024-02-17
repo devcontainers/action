@@ -74,6 +74,11 @@ inputs:
     description: >- 
       Published Template IDs will be prefixed with the namespace.
       If omitted, this value will default to the source repo name
+  default-branch:
+    required: false
+    description: >- 
+      The default branch for the repo (used when creating documentation updates)
+      If omitted, this value will default to `main`
 runs:
   using: node20
   main: dist/index.js
