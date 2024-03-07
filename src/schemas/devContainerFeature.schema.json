@@ -243,8 +243,7 @@
             }
           },
           "required": [
-            "type",
-            "default"
+            "type"
           ],
           "type": "object"
         },
