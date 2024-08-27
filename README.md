@@ -56,7 +56,7 @@ jobs:
 
 #### Enable creation of pull requests
 
-This action will auto-generate documentation and create a pull request of chose changes for your review.
+This action will auto-generate documentation and create a pull request of those changes for your review.
 
 Ensure [**Allow GitHub Actions to create and approve pull requests**](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#preventing-github-actions-from-creating-or-approving-pull-requests) is enabled in your repo settings.
 
