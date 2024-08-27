@@ -25,6 +25,8 @@ To best get started, create your own repo from the [`devcontainers/feature-start
 
 ### Permissions
 
+#### Workflow permissions
+
 Running this action requires the following [permissions](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/controlling-permissions-for-github_token) be granted:
 
 - `packages: write`
@@ -51,6 +53,20 @@ jobs:
           publish-templates: "true"
           base-path-to-templates: "./src"
 ```
+
+#### Enable creation of pull requests
+
+This action will auto-generate documentation and generate a pull request for your review. 
+
+Ensure [**Allow GitHub Actions to create and approve pull requests**](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/enabling-features-for-your-repository/managing-github-actions-settings-for-a-repository#preventing-github-actions-from-creating-or-approving-pull-requests) is enabled in your repo.
+
+#### Optional: Setting Features/Templates as public
+
+Features or Templates published to a registry are private by default. To share your Feature or Template with others outside your organization, you can update the visibility to public.
+
+To do so, publish your Feature or Template and navigate to its setting page. To see packages you have published to the GitHub Container Registry, navigate to the following URL:
+
+`https://github.com/<YOUR_GITHUB_USERNAME>?tab=packages`
 
 ### Pinning `devcontainer` CLI version
 
