@@ -23,6 +23,35 @@ See the [action.yml](https://github.com/devcontainers/action/blob/main/action.ym
 
 To best get started, create your own repo from the [`devcontainers/feature-starter`](https://github.com/devcontainers/feature-starter) or  [`devcontainers/template-starter`](https://github.com/devcontainers/template-starter) repos, customize the provided examples, and trigger the `release.yaml` workflow.
 
+### Permissions
+
+Running this action requires the following [permissions](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/controlling-permissions-for-github_token) be granted:
+
+- `packages: write`
+- `contents: write`
+- `pull-requests: write`
+
+For example:
+
+```yaml
+jobs:
+  deploy:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: "Publish Templates"
+        uses: devcontainers/action@v1
+        with:
+          publish-templates: "true"
+          base-path-to-templates: "./src"
+```
+
 ### Pinning `devcontainer` CLI version
 
 This action heavily relies on the [devcontainers/cli](https://github.com/devcontainers/cli) for various operations.  By default, this action will fetch the latest version published to [npm](https://www.npmjs.com/package/@devcontainers/cli).  The `devcontainer-cli-version` property can be used to pin to a specific CLI release. Eg:
