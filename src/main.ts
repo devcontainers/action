@@ -18,6 +18,7 @@ async function run(): Promise<void> {
     // Read inputs
     const shouldGenerateDocumentation = core.getInput('generate-docs').toLowerCase() === 'true';
     const sourceMetadata = getGitHubMetadata();
+    const defaultBranch = core.getInput('default-branch') ?? 'main';
 
     // Read inputs - Features
     const shouldPublishFeatures = core.getInput('publish-features').toLowerCase() === 'true';
@@ -127,12 +128,12 @@ async function run(): Promise<void> {
 
     if (shouldGenerateDocumentation && featuresBasePath) {
         core.info('Generating documentation for Features...');
-        await generateFeaturesDocumentation(featuresBasePath, featuresOciRegistry, featuresNamespace);
+        await generateFeaturesDocumentation(featuresBasePath, featuresOciRegistry, featuresNamespace, defaultBranch);
     }
 
     if (shouldGenerateDocumentation && templatesBasePath) {
         core.info('Generating documentation for Templates...');
-        await generateTemplateDocumentation(templatesBasePath);
+        await generateTemplateDocumentation(templatesBasePath, defaultBranch);
     }
 }
 
