@@ -118,7 +118,7 @@ export async function ensureDevcontainerCliPresent(cliDebugMode = false): Promis
 }
 
 export async function validateFeatureSchema(pathToAFeatureDir: string): Promise<boolean> {
-    const ajv = new Ajv();
+    const ajv = new Ajv({ allowUnionTypes: true });
     ajv.addSchema(devContainerFeatureSchema);
     const validate = ajv.compile(devContainerFeatureSchema);
 

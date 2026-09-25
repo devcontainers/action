@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@types/ajv": "^1.0.0",
-    "@types/node": "^18.11.18",
+    "@types/node": "^24.0.0",
     "@vercel/ncc": "^0.34.0",
     "eslint": "^8.32.0",
     "jest": "^28.1.3",
