@@ -83,6 +83,10 @@ This action heavily relies on the [devcontainers/cli](https://github.com/devcont
 
 The changelog for the CLI can always be found here: https://github.com/devcontainers/cli/blob/main/CHANGELOG.md
 
+## Maintaining
+
+See [RELEASING.md](RELEASING.md) for instructions on publishing a new version of this action.
+
 ## Design
 
 Internally, this GitHub Action will fetch the latest published version of the [Dev Container CLI](https://github.com/devcontainers/cli) and execute the appropriate CLI commands - namely `devcontainer features publish` and `devcontainer templates publish`.   
